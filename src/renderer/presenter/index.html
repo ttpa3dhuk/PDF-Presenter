@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; worker-src 'self' blob:; img-src 'self' data: blob:;" />
+    <title>PDF Presenter</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body data-role="">
+    <div id="app" class="app">
+      <header class="topbar">
+        <div class="topbar-row main">
+          <div class="topbar-left">
+            <span id="pdf-name" class="pdf-name"></span>
+          </div>
+          <div class="topbar-center">
+            <span id="slide-counter" class="slide-counter">Слайд — из —</span>
+            <span id="slide-remaining" class="slide-remaining"></span>
+          </div>
+          <div class="topbar-right">
+            <span id="timer-display" class="timer font-system green">00:00</span>
+            <button id="timer-toggle" class="op-only" title="Start/Pause (T)">▶</button>
+            <button id="timer-reset" class="op-only" title="Reset (Shift+T)">⟲</button>
+            <button id="blackout-toggle" class="op-only" title="Blackout (B)">⬛</button>
+          </div>
+        </div>
+        <div class="topbar-row timer-controls op-only">
+          <div class="group">
+            <label class="group-label">Длительность</label>
+            <input id="duration-input" type="number" min="0" step="1" value="30" />
+            <span class="suffix">мин</span>
+          </div>
+          <div class="group">
+            <label class="group-label">Пресет</label>
+            <button class="preset" data-min="15">15</button>
+            <button class="preset" data-min="30">30</button>
+            <button class="preset" data-min="45">45</button>
+            <button class="preset" data-min="60">60</button>
+            <button class="preset" data-min="90">90</button>
+          </div>
+          <div class="group">
+            <label class="group-label">±</label>
+            <button class="adjust" data-delta="-5">−5</button>
+            <button class="adjust" data-delta="-3">−3</button>
+            <button class="adjust" data-delta="-1">−1</button>
+            <button class="adjust" data-delta="1">+1</button>
+            <button class="adjust" data-delta="3">+3</button>
+            <button class="adjust" data-delta="5">+5</button>
+          </div>
+          <div class="group">
+            <label class="group-label">Шрифт</label>
+            <select id="font-select">
+              <option value="system">System</option>
+              <option value="mono">Mono</option>
+              <option value="rounded">Rounded</option>
+              <option value="display">Display</option>
+            </select>
+          </div>
+        </div>
+      </header>
+
+      <main class="grid">
+        <aside class="playlist op-only">
+          <div class="playlist-header">
+            <span class="label">Спикеры</span>
+            <button id="playlist-add" title="Добавить PDF / PPTX / изображение">+ Добавить</button>
+          </div>
+          <ol id="playlist-list" class="playlist-list"></ol>
+          <div id="playlist-empty" class="playlist-empty">
+            Список пуст. Жми «+ Добавить», чтобы загрузить PDF спикеров.
+          </div>
+          <div class="keyvisual-section">
+            <div class="kv-header">
+              <span class="label">Заставка (blackout)</span>
+            </div>
+            <div id="kv-preview" class="kv-preview kv-empty">Нет заставки — Blackout покажет чёрный экран</div>
+            <div class="kv-buttons">
+              <button id="kv-set">Выбрать…</button>
+              <button id="kv-clear">Убрать</button>
+            </div>
+          </div>
+        </aside>
+        <section class="current-slide">
+          <canvas id="current-canvas" class="hidden"></canvas>
+          <img id="current-image" class="slide-image hidden" alt="" />
+          <div id="slide-placeholder" class="slide-placeholder">
+            <div class="placeholder-title">Нет активного спикера</div>
+            <div class="placeholder-hint">Кликни по спикеру в списке слева<br/>или открой файл (Cmd+O)</div>
+          </div>
+        </section>
+        <aside class="sidebar">
+          <div class="next-slide">
+            <div class="label">Дальше</div>
+            <canvas id="next-canvas"></canvas>
+            <div id="next-empty" class="next-empty hidden">— одна страница —</div>
+          </div>
+          <div class="notes">
+            <div class="label">Заметки</div>
+            <textarea id="notes-input" class="op-only" placeholder="Заметка к этому слайду…"></textarea>
+            <div id="notes-readonly" class="speaker-only notes-readonly"></div>
+          </div>
+        </aside>
+      </main>
+
+      <footer class="bottombar op-only">
+        <button id="nav-prev" title="←">◀ Prev</button>
+        <button id="nav-next" title="→ / Space">Next ▶</button>
+        <span class="spacer"></span>
+        <button id="open-pdf-footer">Открыть PDF…</button>
+        <button id="display-setup">Настройка экранов…</button>
+      </footer>
+
+      <div id="banner" class="banner hidden"></div>
+      <div id="update-bar" class="update-bar hidden op-only">
+        <span id="update-text"></span>
+        <button id="update-download">Скачать</button>
+        <button id="update-dismiss" title="Скрыть до следующего запуска">✕</button>
+      </div>
+    </div>
+
+    <div id="setup-modal" class="modal hidden">
+      <div class="modal-content">
+        <h2>Настройка экранов</h2>
+        <div class="layout-picker">
+          <label><input type="radio" name="layout" value="solo" /> 1 экран (только я)</label>
+          <label><input type="radio" name="layout" value="presenter-audience" /> 2 экрана (ноут + проектор)</label>
+          <label><input type="radio" name="layout" value="operator-speaker-audience" /> 3 экрана (+ суфлёр клиента)</label>
+        </div>
+        <div id="role-mapping" class="role-mapping"></div>
+        <div class="modal-actions">
+          <button id="setup-cancel">Отмена</button>
+          <button id="setup-apply" class="primary">Применить</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

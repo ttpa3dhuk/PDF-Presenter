@@ -1,0 +1,67 @@
+{
+  "name": "pdf-presenter",
+  "version": "0.1.0",
+  "description": "PowerPoint-like Presenter View for PDF, PPTX and image files",
+  "author": "Azat Khusaenov",
+  "main": "out/main/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "start": "electron-vite preview",
+    "typecheck": "tsc --noEmit",
+    "package:mac": "electron-vite build && electron-builder --mac --publish=never",
+    "package:win": "electron-vite build && electron-builder --win --publish=never",
+    "package:all": "electron-vite build && electron-builder -mw --publish=never"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "electron": "^33.3.0",
+    "electron-builder": "^26.8.1",
+    "electron-vite": "^2.3.0",
+    "typescript": "^5.7.2",
+    "vite": "^5.4.11"
+  },
+  "dependencies": {
+    "electron-store": "^10.0.1",
+    "pdfjs-dist": "^4.10.38"
+  },
+  "build": {
+    "appId": "com.azat.pdf-presenter",
+    "productName": "PDF Presenter",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "out/**/*",
+      "package.json",
+      "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
+      "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
+      "!**/node_modules/*.d.ts",
+      "!**/node_modules/.bin",
+      "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}"
+    ],
+    "mac": {
+      "target": [
+        { "target": "dmg", "arch": ["arm64", "x64"] },
+        { "target": "zip", "arch": ["arm64", "x64"] }
+      ],
+      "category": "public.app-category.productivity",
+      "identity": null,
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false
+    },
+    "dmg": {
+      "title": "PDF Presenter",
+      "writeUpdateInfo": false
+    },
+    "win": {
+      "target": [
+        { "target": "zip", "arch": ["x64"] }
+      ]
+    },
+    "asar": true,
+    "compression": "normal"
+  }
+}

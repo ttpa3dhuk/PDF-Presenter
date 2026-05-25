@@ -1,0 +1,116 @@
+import { contextBridge, ipcRenderer } from 'electron'
+import type { PresenterApi } from './api'
+
+const api: PresenterApi = {
+  state: {
+    get: () => ipcRenderer.invoke('state:get'),
+    onPatch: (cb) => {
+      const listener = (_e: Electron.IpcRendererEvent, patch: object) => cb(patch as never)
+      ipcRenderer.on('state:patch', listener)
+      return () => ipcRenderer.removeListener('state:patch', listener)
+    },
+    onFull: (cb) => {
+      const listener = (_e: Electron.IpcRendererEvent, full: object) => cb(full as never)
+      ipcRenderer.on('state:full', listener)
+      return () => ipcRenderer.removeListener('state:full', listener)
+    },
+  },
+  pdf: {
+    openDialog: () => ipcRenderer.invoke('pdf:open-dialog'),
+    openPath: (path) => ipcRenderer.invoke('pdf:open-path', path),
+    read: () => ipcRenderer.invoke('pdf:read'),
+    reportTotal: (total) => ipcRenderer.invoke('pdf:report-total', total),
+  },
+  nav: {
+    goto: (slide) => ipcRenderer.invoke('nav:goto', slide),
+    next: () => ipcRenderer.invoke('nav:next'),
+    prev: () => ipcRenderer.invoke('nav:prev'),
+  },
+  note: {
+    update: (slide, text) => ipcRenderer.invoke('note:update', { slide, text }),
+  },
+  timer: {
+    start: () => ipcRenderer.invoke('timer:start'),
+    pause: () => ipcRenderer.invoke('timer:pause'),
+    reset: () => ipcRenderer.invoke('timer:reset'),
+    setDuration: (ms) => ipcRenderer.invoke('timer:set-duration', ms),
+    adjust: (deltaMs) => ipcRenderer.invoke('timer:adjust', deltaMs),
+    setFont: (font) => ipcRenderer.invoke('timer:set-font', font),
+  },
+  blackout: {
+    toggle: () => ipcRenderer.invoke('blackout:toggle'),
+  },
+  displays: {
+    list: () => ipcRenderer.invoke('displays:list'),
+  },
+  layout: {
+    set: (layout, displayMap) => ipcRenderer.invoke('layout:set', { layout, displayMap }),
+  },
+  playlist: {
+    add: () => ipcRenderer.invoke('playlist:add'),
+    remove: (id) => ipcRenderer.invoke('playlist:remove', id),
+    reorder: (ids) => ipcRenderer.invoke('playlist:reorder', ids),
+    update: (id, payload) => ipcRenderer.invoke('playlist:update', { id, ...payload }),
+    activate: (id) => ipcRenderer.invoke('playlist:activate', id),
+  },
+  keyvisual: {
+    set: () => ipcRenderer.invoke('keyvisual:set'),
+    clear: () => ipcRenderer.invoke('keyvisual:clear'),
+    read: () => ipcRenderer.invoke('keyvisual:read'),
+  },
+  project: {
+    create: () => ipcRenderer.invoke('project:new'),
+    save: (saveAs) => ipcRenderer.invoke('project:save', { saveAs: Boolean(saveAs) }),
+    open: () => ipcRenderer.invoke('project:open'),
+  },
+  menu: {
+    onOpenPdf: (cb) => {
+      const listener = () => cb()
+      ipcRenderer.on('menu:open-pdf', listener)
+      return () => ipcRenderer.removeListener('menu:open-pdf', listener)
+    },
+    onOpenDisplaySetup: (cb) => {
+      const listener = () => cb()
+      ipcRenderer.on('menu:open-display-setup', listener)
+      return () => ipcRenderer.removeListener('menu:open-display-setup', listener)
+    },
+    onTopologyChanged: (cb) => {
+      const listener = () => cb()
+      ipcRenderer.on('display:topology-changed', listener)
+      return () => ipcRenderer.removeListener('display:topology-changed', listener)
+    },
+    onProjectNew: (cb) => {
+      const listener = () => cb()
+      ipcRenderer.on('menu:project-new', listener)
+      return () => ipcRenderer.removeListener('menu:project-new', listener)
+    },
+    onProjectOpen: (cb) => {
+      const listener = () => cb()
+      ipcRenderer.on('menu:project-open', listener)
+      return () => ipcRenderer.removeListener('menu:project-open', listener)
+    },
+    onProjectSave: (cb) => {
+      const listener = () => cb()
+      ipcRenderer.on('menu:project-save', listener)
+      return () => ipcRenderer.removeListener('menu:project-save', listener)
+    },
+    onProjectSaveAs: (cb) => {
+      const listener = () => cb()
+      ipcRenderer.on('menu:project-save-as', listener)
+      return () => ipcRenderer.removeListener('menu:project-save-as', listener)
+    },
+  },
+  update: {
+    onAvailable: (cb) => {
+      const listener = (_e: Electron.IpcRendererEvent, info: { newerVersion: string; url: string }) =>
+        cb(info)
+      ipcRenderer.on('update:available', listener)
+      return () => ipcRenderer.removeListener('update:available', listener)
+    },
+  },
+  external: {
+    open: (url) => ipcRenderer.invoke('external:open', url),
+  },
+}
+
+contextBridge.exposeInMainWorld('api', api)

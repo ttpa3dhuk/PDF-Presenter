@@ -1,0 +1,492 @@
+import { dialog, ipcMain, screen } from 'electron'
+import { readFile } from 'node:fs/promises'
+import { randomUUID } from 'node:crypto'
+import { basename } from 'node:path'
+import type { DisplayMap, Layout } from './layout.js'
+import type { FileKind, PlaylistEntry, TimerFont } from './state.js'
+import { store } from './state.js'
+import { computePdfSha1, loadNotes, notesWriter, sidecarPathFor } from './notes-store.js'
+import { applyLayout, getOperatorWindow } from './windows.js'
+import {
+  saveMapping,
+  setLastPdfPath,
+  setLastDurationMs,
+  setTimerFont,
+  setPlaylist,
+  setCurrentPlaylistId,
+  setKeyVisualPath,
+  setProjectPath,
+} from './display-mapping.js'
+import { cachedPdfPathFor, convertPptxToPdf, findSoffice } from './pptx-converter.js'
+import {
+  loadProjectFile,
+  PROJECT_EXTENSION,
+  saveProjectFile,
+} from './project.js'
+
+export interface DisplayInfo {
+  id: number
+  label: string
+  internal: boolean
+  bounds: Electron.Rectangle
+}
+
+export interface OpenPdfResult {
+  ok: boolean
+  path?: string
+  totalSlides?: number
+  sha1?: string
+  sha1Mismatch?: boolean
+  cancelled?: boolean
+  error?: string
+  kind?: FileKind
+}
+
+const IMAGE_EXTS = new Set(['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp'])
+const PDF_EXTS = new Set(['pdf'])
+const PPTX_EXTS = new Set(['pptx', 'ppt', 'odp', 'key'])
+
+const ALL_SUPPORTED_EXTS = [
+  ...PDF_EXTS,
+  ...PPTX_EXTS,
+  ...IMAGE_EXTS,
+]
+
+function extOf(path: string): string {
+  return path.toLowerCase().split('.').pop() ?? ''
+}
+
+export function kindOf(path: string): FileKind | null {
+  const ext = extOf(path)
+  if (PDF_EXTS.has(ext)) return 'pdf'
+  if (IMAGE_EXTS.has(ext)) return 'image'
+  if (PPTX_EXTS.has(ext)) return 'pptx'
+  return null
+}
+
+export function mimeOf(path: string): string {
+  const ext = extOf(path)
+  const map: Record<string, string> = {
+    pdf: 'application/pdf',
+    png: 'image/png',
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    webp: 'image/webp',
+    gif: 'image/gif',
+    bmp: 'image/bmp',
+  }
+  return map[ext] ?? 'application/octet-stream'
+}
+
+async function openFile(
+  filePath: string,
+  opts: { playlistId?: string | null; durationMs?: number } = {},
+): Promise<OpenPdfResult> {
+  try {
+    const kind = kindOf(filePath)
+    if (!kind) return { ok: false, error: 'Неподдерживаемый формат файла' }
+
+    const sha1 = await computePdfSha1(filePath)
+    const loaded = await loadNotes(filePath, sha1)
+    let totalSlides = 1
+    if (kind === 'pdf') {
+      const buf = await readFile(filePath)
+      totalSlides = countPdfPages(buf)
+    } else if (kind === 'pptx') {
+      const cachedPath = await convertPptxToPdf(filePath, sha1)
+      const buf = await readFile(cachedPath)
+      totalSlides = countPdfPages(buf)
+    }
+
+    const playlistId = opts.playlistId ?? null
+    const timerPatch: Partial<import('./state.js').TimerState> = {
+      startedAt: null,
+      elapsedMs: 0,
+      running: false,
+    }
+    if (typeof opts.durationMs === 'number') timerPatch.durationMs = opts.durationMs
+
+    store.patch({
+      pdfPath: filePath,
+      pdfSha1: sha1,
+      fileKind: kind,
+      totalSlides,
+      currentSlide: 1,
+      notes: loaded.notes,
+      currentPlaylistId: playlistId,
+    })
+    store.patchTimer(timerPatch)
+
+    setLastPdfPath(filePath)
+    setCurrentPlaylistId(playlistId)
+    if (typeof opts.durationMs === 'number') setLastDurationMs(opts.durationMs)
+
+    return {
+      ok: true,
+      path: filePath,
+      totalSlides,
+      sha1,
+      sha1Mismatch: loaded.sha1Mismatch,
+      kind,
+    }
+  } catch (err) {
+    return { ok: false, error: (err as Error).message }
+  }
+}
+
+function persistPlaylist(): void {
+  setPlaylist(store.get().playlist)
+}
+
+function countPdfPages(buf: Buffer): number {
+  // Lightweight scan: count "/Type /Page" objects, excluding /Pages.
+  // This is good enough for the page counter; pdf.js in renderer authoritatively renders.
+  const text = buf.toString('latin1')
+  const matches = text.match(/\/Type\s*\/Page(?!s)/g)
+  return matches ? matches.length : 0
+}
+
+export function registerIpcHandlers(): void {
+  ipcMain.handle('pdf:open-dialog', async () => {
+    const op = getOperatorWindow()
+    const res = await dialog.showOpenDialog(op!, {
+      title: 'Открыть PDF, PPTX или изображение',
+      filters: [
+        { name: 'Все поддерживаемые', extensions: ALL_SUPPORTED_EXTS },
+        { name: 'PDF', extensions: ['pdf'] },
+        { name: 'PowerPoint / Keynote', extensions: ['pptx', 'ppt', 'odp', 'key'] },
+        { name: 'Изображения', extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp'] },
+      ],
+      properties: ['openFile'],
+    })
+    if (res.canceled || res.filePaths.length === 0) return { ok: false, cancelled: true }
+    return openFile(res.filePaths[0])
+  })
+
+  ipcMain.handle('pdf:open-path', async (_e, filePath: string) => {
+    return openFile(filePath)
+  })
+
+  ipcMain.handle('pdf:read', async (): Promise<{ bytes: Uint8Array; mime: string } | null> => {
+    const { pdfPath, fileKind, pdfSha1 } = store.get()
+    if (!pdfPath) return null
+    try {
+      // For PPTX, read the cached converted PDF instead of the source file
+      const readPath =
+        fileKind === 'pptx' && pdfSha1 ? cachedPdfPathFor(pdfSha1) : pdfPath
+      const buf = await readFile(readPath)
+      const mime = fileKind === 'pptx' ? 'application/pdf' : mimeOf(pdfPath)
+      return {
+        bytes: new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength),
+        mime,
+      }
+    } catch {
+      return null
+    }
+  })
+
+  ipcMain.handle('pdf:report-total', (_e, total: number) => {
+    if (typeof total === 'number' && total > 0 && total !== store.get().totalSlides) {
+      store.patch({ totalSlides: total })
+    }
+  })
+
+  ipcMain.handle('nav:goto', (_e, slide: number) => {
+    const { totalSlides } = store.get()
+    if (totalSlides === 0) return
+    const clamped = Math.max(1, Math.min(totalSlides, slide))
+    store.patch({ currentSlide: clamped })
+  })
+
+  ipcMain.handle('nav:next', () => {
+    const { currentSlide, totalSlides } = store.get()
+    if (currentSlide < totalSlides) store.patch({ currentSlide: currentSlide + 1 })
+  })
+
+  ipcMain.handle('nav:prev', () => {
+    const { currentSlide } = store.get()
+    if (currentSlide > 1) store.patch({ currentSlide: currentSlide - 1 })
+  })
+
+  ipcMain.handle('note:update', (_e, payload: { slide: number; text: string }) => {
+    const { slide, text } = payload
+    store.patchNotes(slide, text)
+    const { pdfPath, pdfSha1, notes } = store.get()
+    if (pdfPath && pdfSha1) notesWriter.schedule(pdfPath, pdfSha1, notes)
+  })
+
+  ipcMain.handle('timer:start', () => {
+    const t = store.get().timer
+    if (t.running) return
+    store.patchTimer({ startedAt: Date.now(), running: true })
+  })
+
+  ipcMain.handle('timer:pause', () => {
+    const t = store.get().timer
+    if (!t.running || t.startedAt === null) return
+    const elapsedMs = t.elapsedMs + (Date.now() - t.startedAt)
+    store.patchTimer({ startedAt: null, elapsedMs, running: false })
+  })
+
+  ipcMain.handle('timer:reset', () => {
+    store.patchTimer({ startedAt: null, elapsedMs: 0, running: false })
+  })
+
+  ipcMain.handle('timer:set-duration', (_e, ms: number) => {
+    const clamped = Math.max(0, Math.floor(ms))
+    store.patchTimer({ durationMs: clamped })
+    setLastDurationMs(clamped)
+  })
+
+  ipcMain.handle('timer:adjust', (_e, deltaMs: number) => {
+    const t = store.get().timer
+    const next = Math.max(0, t.durationMs + Math.floor(deltaMs))
+    store.patchTimer({ durationMs: next })
+    setLastDurationMs(next)
+  })
+
+  ipcMain.handle('timer:set-font', (_e, font: TimerFont) => {
+    store.patch({ timerFont: font })
+    setTimerFont(font)
+  })
+
+  ipcMain.handle('blackout:toggle', () => {
+    store.patch({ blackout: !store.get().blackout })
+  })
+
+  ipcMain.handle('displays:list', (): DisplayInfo[] => {
+    const primary = screen.getPrimaryDisplay()
+    return screen.getAllDisplays().map((d, i) => ({
+      id: d.id,
+      label: d.id === primary.id ? `Display ${i + 1} (internal)` : `Display ${i + 1}`,
+      internal: d.id === primary.id,
+      bounds: d.bounds,
+    }))
+  })
+
+  ipcMain.handle('layout:set', (_e, payload: { layout: Layout; displayMap: DisplayMap }) => {
+    applyLayout(payload.layout, payload.displayMap)
+    saveMapping(payload.layout, payload.displayMap)
+  })
+
+  ipcMain.handle('playlist:add', async (): Promise<PlaylistEntry[]> => {
+    const op = getOperatorWindow()
+    const res = await dialog.showOpenDialog(op!, {
+      title: 'Добавить файлы в плейлист',
+      filters: [
+        { name: 'Все поддерживаемые', extensions: ALL_SUPPORTED_EXTS },
+        { name: 'PDF', extensions: ['pdf'] },
+        { name: 'PowerPoint / Keynote', extensions: ['pptx', 'ppt', 'odp', 'key'] },
+        { name: 'Изображения', extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp'] },
+      ],
+      properties: ['openFile', 'multiSelections'],
+    })
+    if (res.canceled || res.filePaths.length === 0) return []
+
+    const existing = store.get().playlist
+    const defaultDur = store.get().timer.durationMs
+    const newEntries: PlaylistEntry[] = []
+    for (const p of res.filePaths) {
+      const kind = kindOf(p)
+      if (!kind) continue
+      newEntries.push({
+        id: randomUUID(),
+        kind,
+        filePath: p,
+        fileName: basename(p),
+        speakerName: '',
+        durationMs: defaultDur,
+      })
+    }
+    store.patch({ playlist: [...existing, ...newEntries] })
+    persistPlaylist()
+    return newEntries
+  })
+
+  ipcMain.handle('playlist:remove', (_e, id: string) => {
+    const next = store.get().playlist.filter((e) => e.id !== id)
+    const patch: Partial<import('./state.js').AppState> = { playlist: next }
+    if (store.get().currentPlaylistId === id) {
+      patch.currentPlaylistId = null
+      setCurrentPlaylistId(null)
+    }
+    store.patch(patch)
+    persistPlaylist()
+  })
+
+  ipcMain.handle('playlist:reorder', (_e, ids: string[]) => {
+    const map = new Map(store.get().playlist.map((e) => [e.id, e]))
+    const reordered = ids.map((id) => map.get(id)).filter((e): e is PlaylistEntry => Boolean(e))
+    store.patch({ playlist: reordered })
+    persistPlaylist()
+  })
+
+  ipcMain.handle(
+    'playlist:update',
+    (_e, payload: { id: string; speakerName?: string; durationMs?: number }) => {
+      const next = store.get().playlist.map((e) =>
+        e.id === payload.id
+          ? {
+              ...e,
+              speakerName: payload.speakerName ?? e.speakerName,
+              durationMs:
+                typeof payload.durationMs === 'number' ? payload.durationMs : e.durationMs,
+            }
+          : e,
+      )
+      store.patch({ playlist: next })
+      persistPlaylist()
+
+      // If the updated entry is the active one and duration changed, apply it
+      if (
+        typeof payload.durationMs === 'number' &&
+        store.get().currentPlaylistId === payload.id
+      ) {
+        store.patchTimer({ durationMs: payload.durationMs })
+        setLastDurationMs(payload.durationMs)
+      }
+    },
+  )
+
+  ipcMain.handle('playlist:activate', async (_e, id: string): Promise<OpenPdfResult> => {
+    const entry = store.get().playlist.find((e) => e.id === id)
+    if (!entry) return { ok: false, error: 'Entry not found' }
+    return openFile(entry.filePath, { playlistId: id, durationMs: entry.durationMs })
+  })
+
+  ipcMain.handle('keyvisual:set', async (): Promise<{ path: string | null }> => {
+    const op = getOperatorWindow()
+    const res = await dialog.showOpenDialog(op!, {
+      title: 'Выбрать заставку (key visual)',
+      filters: [{ name: 'Изображения', extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif'] }],
+      properties: ['openFile'],
+    })
+    if (res.canceled || res.filePaths.length === 0) return { path: store.get().keyVisualPath }
+    const path = res.filePaths[0]
+    store.patch({ keyVisualPath: path })
+    setKeyVisualPath(path)
+    return { path }
+  })
+
+  ipcMain.handle('keyvisual:clear', () => {
+    store.patch({ keyVisualPath: null })
+    setKeyVisualPath(null)
+  })
+
+  ipcMain.handle('keyvisual:read', async (): Promise<{ bytes: Uint8Array; mime: string } | null> => {
+    const path = store.get().keyVisualPath
+    if (!path) return null
+    try {
+      const buf = await readFile(path)
+      const ext = path.toLowerCase().split('.').pop() ?? ''
+      const mimeMap: Record<string, string> = {
+        png: 'image/png',
+        jpg: 'image/jpeg',
+        jpeg: 'image/jpeg',
+        webp: 'image/webp',
+        gif: 'image/gif',
+      }
+      return {
+        bytes: new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength),
+        mime: mimeMap[ext] ?? 'application/octet-stream',
+      }
+    } catch {
+      return null
+    }
+  })
+
+  ipcMain.handle('state:get', () => store.get())
+
+  ipcMain.handle('sidecar:path', (_e, pdfPath: string) => sidecarPathFor(pdfPath))
+
+  ipcMain.handle('project:new', () => {
+    store.patch({
+      playlist: [],
+      currentPlaylistId: null,
+      keyVisualPath: null,
+      projectPath: null,
+      pdfPath: null,
+      pdfSha1: null,
+      fileKind: null,
+      totalSlides: 0,
+      currentSlide: 1,
+      notes: {},
+      blackout: false,
+    })
+    persistPlaylist()
+    setCurrentPlaylistId(null)
+    setKeyVisualPath(null)
+    setProjectPath(null)
+    setLastPdfPath(null)
+  })
+
+  ipcMain.handle(
+    'project:save',
+    async (_e, payload: { saveAs?: boolean } = {}): Promise<{ ok: boolean; path?: string; error?: string }> => {
+      const op = getOperatorWindow()
+      const state = store.get()
+      let target = state.projectPath
+      if (!target || payload.saveAs) {
+        const res = await dialog.showSaveDialog(op!, {
+          title: 'Сохранить проект',
+          defaultPath: target ?? `presenter-project.${PROJECT_EXTENSION}`,
+          filters: [{ name: 'PDF Presenter project', extensions: [PROJECT_EXTENSION] }],
+        })
+        if (res.canceled || !res.filePath) return { ok: false }
+        target = res.filePath
+      }
+      try {
+        await saveProjectFile(target, {
+          playlist: state.playlist,
+          keyVisualPath: state.keyVisualPath,
+        })
+        store.patch({ projectPath: target })
+        setProjectPath(target)
+        return { ok: true, path: target }
+      } catch (err) {
+        return { ok: false, error: (err as Error).message }
+      }
+    },
+  )
+
+  ipcMain.handle(
+    'project:open',
+    async (): Promise<{ ok: boolean; path?: string; error?: string }> => {
+      const op = getOperatorWindow()
+      const res = await dialog.showOpenDialog(op!, {
+        title: 'Открыть проект',
+        filters: [{ name: 'PDF Presenter project', extensions: [PROJECT_EXTENSION] }],
+        properties: ['openFile'],
+      })
+      if (res.canceled || res.filePaths.length === 0) return { ok: false }
+      const path = res.filePaths[0]
+      try {
+        const loaded = await loadProjectFile(path)
+        store.patch({
+          playlist: loaded.playlist,
+          keyVisualPath: loaded.keyVisualPath,
+          currentPlaylistId: null,
+          projectPath: path,
+          pdfPath: null,
+          pdfSha1: null,
+          fileKind: null,
+          totalSlides: 0,
+          currentSlide: 1,
+          notes: {},
+        })
+        persistPlaylist()
+        setKeyVisualPath(loaded.keyVisualPath)
+        setCurrentPlaylistId(null)
+        setProjectPath(path)
+        setLastPdfPath(null)
+        return { ok: true, path }
+      } catch (err) {
+        return { ok: false, error: (err as Error).message }
+      }
+    },
+  )
+}
+
+export async function flushPendingWrites(): Promise<void> {
+  await notesWriter.flush()
+}
