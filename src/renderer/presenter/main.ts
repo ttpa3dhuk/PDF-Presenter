@@ -8,7 +8,6 @@ import type {
   Layout,
   PlaylistEntry,
   Role,
-  TimerFont,
   TimerMode,
   TimerPosition,
 } from '../../preload/api'
@@ -27,7 +26,6 @@ const timerToggle = $<HTMLButtonElement>('timer-toggle')
 const timerReset = $<HTMLButtonElement>('timer-reset')
 const blackoutToggle = $<HTMLButtonElement>('blackout-toggle')
 const durationInput = role === 'operator' ? $<HTMLInputElement>('duration-input') : null
-const fontSelect = role === 'operator' ? $<HTMLSelectElement>('font-select') : null
 const modeSelect = role === 'operator' ? $<HTMLSelectElement>('mode-select') : null
 const playlistList = role === 'operator' ? $<HTMLOListElement>('playlist-list') : null
 const playlistEmpty = role === 'operator' ? $('playlist-empty') : null
@@ -159,8 +157,7 @@ async function renderCurrent(): Promise<void> {
 }
 
 function applyTimerView(view: TimerView): void {
-  const font = getState().timerFont
-  let cls = `timer font-${font} ${view.color}`
+  let cls = `timer ${view.color}`
   if (view.overtime) cls += ' overtime'
   timerDisplay.className = cls
   timerDisplay.textContent = view.text
@@ -366,9 +363,6 @@ function applyState(state: AppState): void {
     const minutes = Math.round(state.timer.durationMs / 60000)
     durationInput.value = String(minutes)
   }
-  if (fontSelect && fontSelect.value !== state.timerFont) {
-    fontSelect.value = state.timerFont
-  }
   if (modeSelect && modeSelect.value !== state.timerMode) {
     modeSelect.value = state.timerMode
   }
@@ -377,8 +371,14 @@ function applyState(state: AppState): void {
     '--notes-font-size',
     `${state.notesFontSize}px`,
   )
+  document.documentElement.style.setProperty(
+    '--timer-scale',
+    String(state.timerScale),
+  )
   const notesFontValueEl = document.getElementById('notes-font-value')
   if (notesFontValueEl) notesFontValueEl.textContent = String(state.notesFontSize)
+  const scaleValueEl = document.getElementById('timer-scale-value')
+  if (scaleValueEl) scaleValueEl.textContent = `${Math.round(state.timerScale * 100)}%`
   if (role === 'operator') {
     document
       .querySelectorAll<HTMLButtonElement>('button.position-btn')
@@ -526,14 +526,17 @@ function setupOperatorControls(): void {
     })
   })
 
-  // Font selector
-  fontSelect!.addEventListener('change', () => {
-    window.api.timer.setFont(fontSelect!.value as TimerFont)
-  })
-
   // Mode selector (countdown / stopwatch / clock)
   modeSelect!.addEventListener('change', () => {
     window.api.timer.setMode(modeSelect!.value as TimerMode)
+  })
+
+  // Timer scale (speaker overlay size)
+  $<HTMLButtonElement>('timer-scale-down').addEventListener('click', () => {
+    window.api.timer.setScale(getState().timerScale - 0.1)
+  })
+  $<HTMLButtonElement>('timer-scale-up').addEventListener('click', () => {
+    window.api.timer.setScale(getState().timerScale + 0.1)
   })
 
   // Position buttons (4 corners for speaker view)

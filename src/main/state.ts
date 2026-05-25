@@ -8,8 +8,6 @@ export interface TimerState {
   running: boolean
 }
 
-export type TimerFont = 'system' | 'mono' | 'rounded' | 'display'
-
 export type TimerMode = 'countdown' | 'stopwatch' | 'clock'
 
 export type TimerPosition = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
@@ -33,9 +31,9 @@ export interface AppState {
   currentSlide: number
   blackout: boolean
   timer: TimerState
-  timerFont: TimerFont
   timerMode: TimerMode
   timerPosition: TimerPosition
+  timerScale: number
   notesFontSize: number
   notes: Record<number, string>
   layout: Layout
@@ -57,9 +55,9 @@ export function initialState(): AppState {
     currentSlide: 1,
     blackout: false,
     timer: { durationMs: DEFAULT_DURATION_MS, startedAt: null, elapsedMs: 0, running: false },
-    timerFont: 'system',
     timerMode: 'countdown',
     timerPosition: 'top-right',
+    timerScale: 1,
     notesFontSize: 18,
     notes: {},
     layout: 'solo',

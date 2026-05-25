@@ -8,9 +8,9 @@ import {
   saveMapping,
   getLastPdfPath,
   getLastDurationMs,
-  getTimerFont,
   getTimerMode,
   getTimerPosition,
+  getTimerScale,
   getNotesFontSize,
   getPlaylist,
   getCurrentPlaylistId,
@@ -165,9 +165,9 @@ app.whenReady().then(async () => {
   // Restore saved timer settings + playlist before any window opens
   store.patch({
     timer: { ...store.get().timer, durationMs: getLastDurationMs() },
-    timerFont: getTimerFont(),
     timerMode: getTimerMode(),
     timerPosition: getTimerPosition(),
+    timerScale: getTimerScale(),
     notesFontSize: getNotesFontSize(),
     playlist: getPlaylist(),
     currentPlaylistId: getCurrentPlaylistId(),

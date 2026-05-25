@@ -1,7 +1,7 @@
 import Store from 'electron-store'
 import { screen } from 'electron'
 import type { DisplayMap, Layout } from './layout.js'
-import type { PlaylistEntry, TimerFont, TimerMode, TimerPosition } from './state.js'
+import type { PlaylistEntry, TimerMode, TimerPosition } from './state.js'
 
 interface SavedMapping {
   layout: Layout
@@ -12,9 +12,9 @@ interface PersistedShape {
   mappings: Record<string, SavedMapping>
   lastPdfPath: string | null
   lastDurationMs: number
-  timerFont: TimerFont
   timerMode: TimerMode
   timerPosition: TimerPosition
+  timerScale: number
   notesFontSize: number
   playlist: PlaylistEntry[]
   currentPlaylistId: string | null
@@ -28,9 +28,9 @@ const store = new Store<PersistedShape>({
     mappings: {},
     lastPdfPath: null,
     lastDurationMs: 30 * 60 * 1000,
-    timerFont: 'system',
     timerMode: 'countdown',
     timerPosition: 'top-right',
+    timerScale: 1,
     notesFontSize: 18,
     playlist: [],
     currentPlaylistId: null,
@@ -76,14 +76,6 @@ export function setLastDurationMs(ms: number): void {
   store.set('lastDurationMs', ms)
 }
 
-export function getTimerFont(): TimerFont {
-  return store.get('timerFont')
-}
-
-export function setTimerFont(font: TimerFont): void {
-  store.set('timerFont', font)
-}
-
 export function getTimerMode(): TimerMode {
   return store.get('timerMode')
 }
@@ -98,6 +90,14 @@ export function getTimerPosition(): TimerPosition {
 
 export function setTimerPosition(pos: TimerPosition): void {
   store.set('timerPosition', pos)
+}
+
+export function getTimerScale(): number {
+  return store.get('timerScale')
+}
+
+export function setTimerScale(scale: number): void {
+  store.set('timerScale', scale)
 }
 
 export function getNotesFontSize(): number {

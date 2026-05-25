@@ -36,9 +36,9 @@ const api: PresenterApi = {
     reset: () => ipcRenderer.invoke('timer:reset'),
     setDuration: (ms) => ipcRenderer.invoke('timer:set-duration', ms),
     adjust: (deltaMs) => ipcRenderer.invoke('timer:adjust', deltaMs),
-    setFont: (font) => ipcRenderer.invoke('timer:set-font', font),
     setMode: (mode) => ipcRenderer.invoke('timer:set-mode', mode),
     setPosition: (pos) => ipcRenderer.invoke('timer:set-position', pos),
+    setScale: (scale) => ipcRenderer.invoke('timer:set-scale', scale),
   },
   blackout: {
     toggle: () => ipcRenderer.invoke('blackout:toggle'),

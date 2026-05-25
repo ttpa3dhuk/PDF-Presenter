@@ -9,8 +9,6 @@ export interface TimerState {
   running: boolean
 }
 
-export type TimerFont = 'system' | 'mono' | 'rounded' | 'display'
-
 export type TimerMode = 'countdown' | 'stopwatch' | 'clock'
 
 export type TimerPosition = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
@@ -34,9 +32,9 @@ export interface AppState {
   currentSlide: number
   blackout: boolean
   timer: TimerState
-  timerFont: TimerFont
   timerMode: TimerMode
   timerPosition: TimerPosition
+  timerScale: number
   notesFontSize: number
   notes: Record<number, string>
   layout: Layout
@@ -94,9 +92,9 @@ export interface PresenterApi {
     reset(): Promise<void>
     setDuration(ms: number): Promise<void>
     adjust(deltaMs: number): Promise<void>
-    setFont(font: TimerFont): Promise<void>
     setMode(mode: TimerMode): Promise<void>
     setPosition(pos: TimerPosition): Promise<void>
+    setScale(scale: number): Promise<void>
   }
   blackout: {
     toggle(): Promise<void>

@@ -6,7 +6,6 @@ import type { DisplayMap, Layout } from './layout.js'
 import type {
   FileKind,
   PlaylistEntry,
-  TimerFont,
   TimerMode,
   TimerPosition,
 } from './state.js'
@@ -17,9 +16,9 @@ import {
   saveMapping,
   setLastPdfPath,
   setLastDurationMs,
-  setTimerFont,
   setTimerMode,
   setTimerPosition,
+  setTimerScale,
   setNotesFontSize,
   setPlaylist,
   setCurrentPlaylistId,
@@ -254,11 +253,6 @@ export function registerIpcHandlers(): void {
     setLastDurationMs(next)
   })
 
-  ipcMain.handle('timer:set-font', (_e, font: TimerFont) => {
-    store.patch({ timerFont: font })
-    setTimerFont(font)
-  })
-
   ipcMain.handle('timer:set-mode', (_e, mode: TimerMode) => {
     store.patch({ timerMode: mode })
     setTimerMode(mode)
@@ -267,6 +261,12 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('timer:set-position', (_e, pos: TimerPosition) => {
     store.patch({ timerPosition: pos })
     setTimerPosition(pos)
+  })
+
+  ipcMain.handle('timer:set-scale', (_e, scale: number) => {
+    const clamped = Math.max(0.5, Math.min(2.5, Math.round(scale * 100) / 100))
+    store.patch({ timerScale: clamped })
+    setTimerScale(clamped)
   })
 
   ipcMain.handle('notes:set-font-size', (_e, px: number) => {
