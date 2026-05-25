@@ -5,8 +5,8 @@
 [![Windows](https://img.shields.io/badge/Windows-10%2F11-0078D6?logo=windows&logoColor=white)](https://github.com/ttpa3dhuk/PDF-Presenter/releases/latest)
 [![Built with Electron](https://img.shields.io/badge/Electron-33-9feaf9?logo=electron&logoColor=black)](https://electronjs.org)
 
-**Presenter View для PDF, PPTX и картинок — как в PowerPoint, но работает с любым форматом.**  
-Сделан для техдиров и event-инженеров: плейлист спикеров, персональные таймеры, три окна (оператор / суфлёр / аудитория).
+**Presenter View для PDF, PPTX и картинок — инструмент оператора презентаций на живых мероприятиях.**  
+Собираешь плейлист всех спикеров заранее, ведёшь мероприятие с одного рабочего места: персональные таймеры с тремя режимами, заметки на суфлёр в реальном времени, блэкаут, три независимых окна (оператор / суфлёр / аудитория).
 
 [🇷🇺 Читать на русском](#-русский) · [🇬🇧 Read in English](#-english)
 
@@ -81,13 +81,18 @@ PDF и картинки работают сразу, без зависимост
 
 ### ✨ Возможности
 
-- 📋 **Плейлист спикеров** — собираешь программу заранее, drag-and-drop сортировка
-- ⏱ **Персональный таймер** — каждому спикеру своя длительность, обратный отсчёт с цветовой индикацией
-- 🖥 **Три окна** — оператор (твой ноут), суфлёр клиента (внешний дисплей), аудитория (проектор)
+- 📋 **Плейлист спикеров** — собираешь всю программу мероприятия заранее, drag-and-drop сортировка, переключение в один клик
+- ⏱ **Таймер — три режима:**
+  - **Обратный отсчёт** — задаёшь длительность на спикера, цвет меняется зелёный → жёлтый → красный
+  - **Секундомер** — считает вверх от нуля
+  - **Текущее время** — часы в реальном времени
+- 🔢 **Пресеты и коррекция на ходу** — быстрый выбор длительности из пресетов; прямо во время выступления можно добавить или убрать время без остановки
+- 📍 **Позиция и масштаб таймера** — выбираешь угол экрана суфлёра (четыре варианта), регулируешь размер
+- 🖥 **Три независимых окна** — оператор (твой ноут), суфлёр клиента (внешний дисплей), аудитория (проектор)
 - 📄 **Форматы** — PDF, PPTX, PPT, ODP, Keynote, PNG/JPG/WebP/GIF/BMP
-- 📝 **Заметки к слайдам** — пишешь в реальном времени, сохраняются рядом с файлом
-- ⬛ **Blackout / Key Visual** — затемнение или собственная заставка 16:9 во время пауз
-- 💾 **Проекты** — сохраняй плейлист как `.pdpres`, открывай перед следующим мероприятием
+- 📝 **Заметки оператора → суфлёр** — пишешь текст в окне оператора, он мгновенно появляется на экране суфлёра. Прямой канал связи со спикером без слов
+- ⬛ **Blackout / Key Visual** — нажал `B`: аудитория видит заставку (если загружена) или чёрный фон. Переключаешь слайды — аудитория ничего не видит
+- 💾 **Проекты** — сохраняй настроенный плейлист как `.pdpres`, открывай перед следующим мероприятием
 - 🔔 **Авто-обновления** — раз в сутки проверяет новую версию на GitHub
 
 ---
@@ -118,6 +123,11 @@ PDF и картинки работают сразу, без зависимост
 | 3 экрана (+ суфлёр) | Оператор + суфлёр + аудитория |
 
 Раскладка определяется автоматически по числу подключённых дисплеев. Поменять — `Cmd+,`.
+
+**Что видит каждое окно:**
+- **Оператор** — полный интерфейс: плейлист, слайды, таймер, управление, заметки
+- **Суфлёр** — текущий слайд + крупный таймер в выбранном углу + заметки от оператора (мгновенно)
+- **Аудитория** — только слайд, без служебной информации. При блэкауте: Key Visual или чёрный фон
 
 ---
 
@@ -198,12 +208,17 @@ PDF and image files work immediately without any dependencies.
 
 ### ✨ Features
 
-- 📋 **Speaker playlist** — build your event program in advance, drag-and-drop reordering
-- ⏱ **Per-speaker timer** — individual duration per speaker, countdown with color indication
-- 🖥 **Three windows** — operator (your laptop), speaker monitor (external display), audience (projector)
+- 📋 **Speaker playlist** — build the full event program in advance, drag-and-drop reordering, one-click switching
+- ⏱ **Timer — three modes:**
+  - **Countdown** — set a duration per speaker, color shifts green → yellow → red
+  - **Stopwatch** — counts up from zero
+  - **Clock** — live current time display
+- 🔢 **Presets & on-the-fly adjustment** — pick duration from presets; add or subtract time mid-presentation without stopping the timer
+- 📍 **Timer position & scale** — choose which corner of the confidence monitor to display the timer (four options), adjust size
+- 🖥 **Three independent windows** — operator (your laptop), confidence monitor (external display), audience (projector)
 - 📄 **File formats** — PDF, PPTX, PPT, ODP, Keynote, PNG/JPG/WebP/GIF/BMP
-- 📝 **Slide notes** — editable in real time, saved as sidecar JSON next to the file
-- ⬛ **Blackout / Key Visual** — black screen or custom 16:9 splash during breaks
+- 📝 **Operator notes → confidence monitor** — type in the operator window, text appears instantly on the speaker's screen. Silent communication channel during the presentation
+- ⬛ **Blackout / Key Visual** — press `B`: audience sees your Key Visual image (if loaded) or a black screen. Switch slides freely — the audience sees nothing
 - 💾 **Projects** — save your configured playlist as `.pdpres`, reopen before the next event
 - 🔔 **Auto-update check** — checks GitHub once a day for a new version
 
@@ -235,6 +250,11 @@ PDF and image files work immediately without any dependencies.
 | 3 displays (+ confidence monitor) | Operator + speaker + audience |
 
 Layout is detected automatically based on connected displays. Override via `Cmd+,`.
+
+**What each window shows:**
+- **Operator** — full interface: playlist, slides, timer controls, notes editor
+- **Confidence monitor (speaker)** — current slide + large timer in the chosen corner + operator notes (instant)
+- **Audience** — slide only, no operator UI. During blackout: Key Visual image or black screen
 
 ---
 
