@@ -6,3 +6,20 @@ release/
 .DS_Store
 .vite/
 CLAUDE.md
+
+# User content — never commit presentations or notes
+*.pdf
+*.pptx
+*.ppt
+*.odp
+*.key
+*.notes.json
+*.pdpres
+pptx-cache/
+
+# OS / IDE / temp
+.idea/
+.vscode/
+Thumbs.db
+*.swp
+*.tmp
