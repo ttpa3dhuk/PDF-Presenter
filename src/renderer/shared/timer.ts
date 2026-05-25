@@ -1,9 +1,8 @@
-import type { TimerState } from '../../preload/api'
+import type { TimerMode, TimerState } from '../../preload/api'
 
-export type TimerColor = 'green' | 'yellow' | 'red'
+export type TimerColor = 'green' | 'yellow' | 'red' | 'neutral'
 
 export interface TimerView {
-  remainingMs: number
   text: string
   color: TimerColor
   overtime: boolean
@@ -44,22 +43,33 @@ export function formatMs(ms: number, signed: boolean = false): string {
   return body
 }
 
-export function timerView(timer: TimerState, now: number = Date.now()): TimerView {
+function formatClock(now: number): string {
+  const d = new Date(now)
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+}
+
+export function timerView(
+  timer: TimerState,
+  mode: TimerMode,
+  now: number = Date.now(),
+): TimerView {
+  if (mode === 'clock') {
+    return { text: formatClock(now), color: 'neutral', overtime: false }
+  }
+  if (mode === 'stopwatch') {
+    return { text: formatMs(elapsedMs(timer, now)), color: 'neutral', overtime: false }
+  }
+  // countdown
   const remaining = remainingMs(timer, now)
   return {
-    remainingMs: remaining,
     text: formatMs(remaining, true),
     color: timerColor(remaining, timer.durationMs),
     overtime: remaining < 0,
   }
 }
 
-export function startTimerTick(
-  getTimer: () => TimerState,
-  onTick: (view: TimerView) => void,
-): () => void {
-  const update = () => onTick(timerView(getTimer()))
-  update()
-  const id = window.setInterval(update, 250)
+export function startTick(intervalMs: number, fn: () => void): () => void {
+  fn()
+  const id = window.setInterval(fn, intervalMs)
   return () => window.clearInterval(id)
 }

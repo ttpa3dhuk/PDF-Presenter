@@ -131,6 +131,32 @@ body[data-role="speaker"] .slide-placeholder { display: none; }
   font-size: 12px;
   font-family: inherit;
 }
+.position-grid {
+  display: grid;
+  grid-template-columns: 20px 20px;
+  grid-template-rows: 20px 20px;
+  gap: 2px;
+}
+.position-btn {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1;
+  padding: 0;
+  min-width: 0;
+  cursor: pointer;
+}
+.position-btn:hover {
+  border-color: #3a4252;
+  color: var(--text);
+}
+.position-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
 
 .topbar-left { justify-self: start; }
 .topbar-center { display: flex; align-items: center; gap: 12px; }
@@ -150,6 +176,7 @@ body[data-role="speaker"] .slide-placeholder { display: none; }
 .timer.green { color: var(--timer-green); }
 .timer.yellow { color: var(--timer-yellow); }
 .timer.red { color: var(--timer-red); }
+.timer.neutral { color: #e6e8ec; }
 .timer.red.overtime { animation: timer-pulse 1s ease-in-out infinite; }
 
 @keyframes timer-pulse {
@@ -410,6 +437,29 @@ body[data-role="speaker"] .playlist { display: none !important; }
   align-self: center;
 }
 
+.notes-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.notes-font-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.notes-font-controls button {
+  padding: 2px 6px;
+  font-size: 11px;
+  min-width: 0;
+}
+.notes-font-value {
+  color: var(--muted);
+  font-size: 10px;
+  min-width: 18px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
 .notes textarea {
   flex: 1;
   background: var(--panel-2);
@@ -418,7 +468,8 @@ body[data-role="speaker"] .playlist { display: none !important; }
   border-radius: 6px;
   padding: 8px;
   font-family: inherit;
-  font-size: 14px;
+  font-size: var(--notes-font-size, 18px);
+  line-height: 1.4;
   resize: none;
   min-height: 0;
 }
@@ -428,21 +479,28 @@ body[data-role="speaker"] .playlist { display: none !important; }
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 8px;
-  font-size: 16px;
+  font-size: var(--notes-font-size, 18px);
   line-height: 1.4;
   overflow-y: auto;
   white-space: pre-wrap;
 }
 
 .bottombar {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  gap: 8px;
   padding: 0 16px;
   background: var(--panel);
   border-top: 1px solid var(--border);
 }
-.bottombar .spacer { flex: 1; }
+.bottombar-nav {
+  display: flex;
+  gap: 8px;
+  justify-self: center;
+}
+.bottombar-right {
+  justify-self: end;
+}
 
 .banner {
   position: fixed;
@@ -527,12 +585,29 @@ body[data-role="speaker"] .playlist { display: none !important; }
 body[data-role="speaker"] .op-only { display: none !important; }
 body[data-role="speaker"] .topbar { background: transparent; border-bottom: none; }
 body[data-role="speaker"] .bottombar { display: none; }
-body[data-role="speaker"] .app { grid-template-rows: 96px 1fr; }
-body[data-role="speaker"] .topbar-row.main { height: 96px; }
+body[data-role="speaker"] .app { grid-template-rows: 56px 1fr; }
+body[data-role="speaker"] .topbar-row.main { height: 56px; }
 body[data-role="speaker"] .grid { padding: 16px; }
-body[data-role="speaker"] .timer { font-size: 64px; font-weight: 700; }
-body[data-role="speaker"] .slide-counter { font-size: 22px; }
-body[data-role="speaker"] .slide-remaining { font-size: 18px; }
+body[data-role="speaker"] .slide-counter { font-size: 18px; }
+body[data-role="speaker"] .slide-remaining { font-size: 14px; }
 body[data-role="speaker"] .pdf-name { display: none; }
+
+/* On speaker, timer is an overlay positioned in one of four corners */
+body[data-role="speaker"] .timer {
+  position: fixed;
+  z-index: 50;
+  font-size: 88px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 14px 24px;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 14px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+body[data-role="speaker"][data-timer-position="top-left"] .timer { top: 24px; left: 24px; }
+body[data-role="speaker"][data-timer-position="top-right"] .timer { top: 24px; right: 24px; }
+body[data-role="speaker"][data-timer-position="bottom-left"] .timer { bottom: 24px; left: 24px; }
+body[data-role="speaker"][data-timer-position="bottom-right"] .timer { bottom: 24px; right: 24px; }
 
 body[data-role="operator"] .speaker-only { display: none !important; }

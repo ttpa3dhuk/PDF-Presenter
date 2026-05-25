@@ -10,6 +10,10 @@ export interface TimerState {
 
 export type TimerFont = 'system' | 'mono' | 'rounded' | 'display'
 
+export type TimerMode = 'countdown' | 'stopwatch' | 'clock'
+
+export type TimerPosition = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
+
 export type FileKind = 'pdf' | 'image' | 'pptx'
 
 export interface PlaylistEntry {
@@ -30,6 +34,9 @@ export interface AppState {
   blackout: boolean
   timer: TimerState
   timerFont: TimerFont
+  timerMode: TimerMode
+  timerPosition: TimerPosition
+  notesFontSize: number
   notes: Record<number, string>
   layout: Layout
   displayMap: DisplayMap
@@ -51,6 +58,9 @@ export function initialState(): AppState {
     blackout: false,
     timer: { durationMs: DEFAULT_DURATION_MS, startedAt: null, elapsedMs: 0, running: false },
     timerFont: 'system',
+    timerMode: 'countdown',
+    timerPosition: 'top-right',
+    notesFontSize: 18,
     notes: {},
     layout: 'solo',
     displayMap: {},

@@ -1,6 +1,6 @@
 import { initBus, getState, subscribe } from '../shared/bus'
 import { loadDocument, renderPageTo, prerender, totalPages } from '../shared/pdf-loader'
-import { startTimerTick, type TimerView } from '../shared/timer'
+import { startTick, timerView, type TimerView } from '../shared/timer'
 import type {
   AppState,
   DisplayInfo,
@@ -9,6 +9,8 @@ import type {
   PlaylistEntry,
   Role,
   TimerFont,
+  TimerMode,
+  TimerPosition,
 } from '../../preload/api'
 
 const role: Role = (new URL(location.href).searchParams.get('role') as Role) ?? 'operator'
@@ -26,6 +28,7 @@ const timerReset = $<HTMLButtonElement>('timer-reset')
 const blackoutToggle = $<HTMLButtonElement>('blackout-toggle')
 const durationInput = role === 'operator' ? $<HTMLInputElement>('duration-input') : null
 const fontSelect = role === 'operator' ? $<HTMLSelectElement>('font-select') : null
+const modeSelect = role === 'operator' ? $<HTMLSelectElement>('mode-select') : null
 const playlistList = role === 'operator' ? $<HTMLOListElement>('playlist-list') : null
 const playlistEmpty = role === 'operator' ? $('playlist-empty') : null
 const playlistAddBtn = role === 'operator' ? $<HTMLButtonElement>('playlist-add') : null
@@ -366,6 +369,23 @@ function applyState(state: AppState): void {
   if (fontSelect && fontSelect.value !== state.timerFont) {
     fontSelect.value = state.timerFont
   }
+  if (modeSelect && modeSelect.value !== state.timerMode) {
+    modeSelect.value = state.timerMode
+  }
+  document.body.dataset.timerPosition = state.timerPosition
+  document.documentElement.style.setProperty(
+    '--notes-font-size',
+    `${state.notesFontSize}px`,
+  )
+  const notesFontValueEl = document.getElementById('notes-font-value')
+  if (notesFontValueEl) notesFontValueEl.textContent = String(state.notesFontSize)
+  if (role === 'operator') {
+    document
+      .querySelectorAll<HTMLButtonElement>('button.position-btn')
+      .forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.pos === state.timerPosition)
+      })
+  }
 
   const noteText = state.notes[state.currentSlide] ?? ''
   if (role === 'operator') {
@@ -473,7 +493,6 @@ function toggleTimer(): void {
 
 function setupOperatorControls(): void {
   if (role !== 'operator') return
-  $('open-pdf-footer').addEventListener('click', openPdf)
   $('nav-prev').addEventListener('click', () => window.api.nav.prev())
   $('nav-next').addEventListener('click', () => window.api.nav.next())
   timerToggle.addEventListener('click', toggleTimer)
@@ -510,6 +529,29 @@ function setupOperatorControls(): void {
   // Font selector
   fontSelect!.addEventListener('change', () => {
     window.api.timer.setFont(fontSelect!.value as TimerFont)
+  })
+
+  // Mode selector (countdown / stopwatch / clock)
+  modeSelect!.addEventListener('change', () => {
+    window.api.timer.setMode(modeSelect!.value as TimerMode)
+  })
+
+  // Position buttons (4 corners for speaker view)
+  document.querySelectorAll<HTMLButtonElement>('button.position-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const pos = btn.dataset.pos as TimerPosition | undefined
+      if (pos) window.api.timer.setPosition(pos)
+    })
+  })
+
+  // Notes font size
+  const notesFontDown = $<HTMLButtonElement>('notes-font-down')
+  const notesFontUp = $<HTMLButtonElement>('notes-font-up')
+  notesFontDown.addEventListener('click', () => {
+    window.api.note.setFontSize(getState().notesFontSize - 2)
+  })
+  notesFontUp.addEventListener('click', () => {
+    window.api.note.setFontSize(getState().notesFontSize + 2)
   })
 
   // Playlist add button
@@ -646,10 +688,10 @@ async function bootstrap(): Promise<void> {
     await loadCurrentFile()
   }
 
-  startTimerTick(
-    () => getState().timer,
-    (view) => applyTimerView(view),
-  )
+  startTick(250, () => {
+    const s = getState()
+    applyTimerView(timerView(s.timer, s.timerMode))
+  })
 
   window.addEventListener('resize', () => {
     const kind = getState().fileKind

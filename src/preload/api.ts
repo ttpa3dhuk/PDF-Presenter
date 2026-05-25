@@ -11,6 +11,10 @@ export interface TimerState {
 
 export type TimerFont = 'system' | 'mono' | 'rounded' | 'display'
 
+export type TimerMode = 'countdown' | 'stopwatch' | 'clock'
+
+export type TimerPosition = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
+
 export type FileKind = 'pdf' | 'image' | 'pptx'
 
 export interface PlaylistEntry {
@@ -31,6 +35,9 @@ export interface AppState {
   blackout: boolean
   timer: TimerState
   timerFont: TimerFont
+  timerMode: TimerMode
+  timerPosition: TimerPosition
+  notesFontSize: number
   notes: Record<number, string>
   layout: Layout
   displayMap: DisplayMap
@@ -79,6 +86,7 @@ export interface PresenterApi {
   }
   note: {
     update(slide: number, text: string): Promise<void>
+    setFontSize(px: number): Promise<void>
   }
   timer: {
     start(): Promise<void>
@@ -87,6 +95,8 @@ export interface PresenterApi {
     setDuration(ms: number): Promise<void>
     adjust(deltaMs: number): Promise<void>
     setFont(font: TimerFont): Promise<void>
+    setMode(mode: TimerMode): Promise<void>
+    setPosition(pos: TimerPosition): Promise<void>
   }
   blackout: {
     toggle(): Promise<void>

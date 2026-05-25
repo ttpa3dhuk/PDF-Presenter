@@ -3,7 +3,13 @@ import { readFile } from 'node:fs/promises'
 import { randomUUID } from 'node:crypto'
 import { basename } from 'node:path'
 import type { DisplayMap, Layout } from './layout.js'
-import type { FileKind, PlaylistEntry, TimerFont } from './state.js'
+import type {
+  FileKind,
+  PlaylistEntry,
+  TimerFont,
+  TimerMode,
+  TimerPosition,
+} from './state.js'
 import { store } from './state.js'
 import { computePdfSha1, loadNotes, notesWriter, sidecarPathFor } from './notes-store.js'
 import { applyLayout, getOperatorWindow } from './windows.js'
@@ -12,6 +18,9 @@ import {
   setLastPdfPath,
   setLastDurationMs,
   setTimerFont,
+  setTimerMode,
+  setTimerPosition,
+  setNotesFontSize,
   setPlaylist,
   setCurrentPlaylistId,
   setKeyVisualPath,
@@ -248,6 +257,22 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('timer:set-font', (_e, font: TimerFont) => {
     store.patch({ timerFont: font })
     setTimerFont(font)
+  })
+
+  ipcMain.handle('timer:set-mode', (_e, mode: TimerMode) => {
+    store.patch({ timerMode: mode })
+    setTimerMode(mode)
+  })
+
+  ipcMain.handle('timer:set-position', (_e, pos: TimerPosition) => {
+    store.patch({ timerPosition: pos })
+    setTimerPosition(pos)
+  })
+
+  ipcMain.handle('notes:set-font-size', (_e, px: number) => {
+    const clamped = Math.max(10, Math.min(72, Math.round(px)))
+    store.patch({ notesFontSize: clamped })
+    setNotesFontSize(clamped)
   })
 
   ipcMain.handle('blackout:toggle', () => {

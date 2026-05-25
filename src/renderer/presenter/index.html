@@ -48,6 +48,14 @@
             <button class="adjust" data-delta="5">+5</button>
           </div>
           <div class="group">
+            <label class="group-label">Режим</label>
+            <select id="mode-select">
+              <option value="countdown">Таймер</option>
+              <option value="stopwatch">Секундомер</option>
+              <option value="clock">Часы</option>
+            </select>
+          </div>
+          <div class="group">
             <label class="group-label">Шрифт</label>
             <select id="font-select">
               <option value="system">System</option>
@@ -55,6 +63,15 @@
               <option value="rounded">Rounded</option>
               <option value="display">Display</option>
             </select>
+          </div>
+          <div class="group position-group">
+            <label class="group-label">Позиция</label>
+            <div class="position-grid">
+              <button class="position-btn" data-pos="top-left" title="Верхний левый">↖</button>
+              <button class="position-btn" data-pos="top-right" title="Верхний правый">↗</button>
+              <button class="position-btn" data-pos="bottom-left" title="Нижний левый">↙</button>
+              <button class="position-btn" data-pos="bottom-right" title="Нижний правый">↘</button>
+            </div>
           </div>
         </div>
       </header>
@@ -95,7 +112,14 @@
             <div id="next-empty" class="next-empty hidden">— одна страница —</div>
           </div>
           <div class="notes">
-            <div class="label">Заметки</div>
+            <div class="notes-header">
+              <span class="label">Заметки</span>
+              <div class="notes-font-controls op-only">
+                <button id="notes-font-down" title="Уменьшить шрифт заметок">A−</button>
+                <span id="notes-font-value" class="notes-font-value">18</span>
+                <button id="notes-font-up" title="Увеличить шрифт заметок">A+</button>
+              </div>
+            </div>
             <textarea id="notes-input" class="op-only" placeholder="Заметка к этому слайду…"></textarea>
             <div id="notes-readonly" class="speaker-only notes-readonly"></div>
           </div>
@@ -103,11 +127,14 @@
       </main>
 
       <footer class="bottombar op-only">
-        <button id="nav-prev" title="←">◀ Prev</button>
-        <button id="nav-next" title="→ / Space">Next ▶</button>
-        <span class="spacer"></span>
-        <button id="open-pdf-footer">Открыть PDF…</button>
-        <button id="display-setup">Настройка экранов…</button>
+        <div></div>
+        <div class="bottombar-nav">
+          <button id="nav-prev" title="←">◀ Prev</button>
+          <button id="nav-next" title="→ / Space">Next ▶</button>
+        </div>
+        <div class="bottombar-right">
+          <button id="display-setup">Настройка экранов…</button>
+        </div>
       </footer>
 
       <div id="banner" class="banner hidden"></div>

@@ -28,6 +28,7 @@ const api: PresenterApi = {
   },
   note: {
     update: (slide, text) => ipcRenderer.invoke('note:update', { slide, text }),
+    setFontSize: (px) => ipcRenderer.invoke('notes:set-font-size', px),
   },
   timer: {
     start: () => ipcRenderer.invoke('timer:start'),
@@ -36,6 +37,8 @@ const api: PresenterApi = {
     setDuration: (ms) => ipcRenderer.invoke('timer:set-duration', ms),
     adjust: (deltaMs) => ipcRenderer.invoke('timer:adjust', deltaMs),
     setFont: (font) => ipcRenderer.invoke('timer:set-font', font),
+    setMode: (mode) => ipcRenderer.invoke('timer:set-mode', mode),
+    setPosition: (pos) => ipcRenderer.invoke('timer:set-position', pos),
   },
   blackout: {
     toggle: () => ipcRenderer.invoke('blackout:toggle'),
