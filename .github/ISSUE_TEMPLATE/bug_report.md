@@ -25,7 +25,7 @@ assignees: ttpa3dhuk
 
 ## Окружение
 
-- **Версия PDF Presenter:** <!-- например v0.1.0 — смотри в About или меню File -->
+- **Версия CueDeck:** <!-- например v0.1.0 — смотри в About или меню File -->
 - **ОС:** <!-- macOS 15.2 / Windows 11 23H2 / ... -->
 - **Архитектура:** <!-- Apple Silicon (M1/M2/M3) / Intel / x64 Windows -->
 - **Тип файла, на котором словил:** <!-- PDF / PPTX / PNG / ... -->

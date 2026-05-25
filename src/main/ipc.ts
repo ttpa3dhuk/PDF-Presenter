@@ -24,6 +24,8 @@ import {
   setCurrentPlaylistId,
   setKeyVisualPath,
   setProjectPath,
+  setPlaylistCompact,
+  setAutoAdvance,
 } from './display-mapping.js'
 import { cachedPdfPathFor, convertPptxToPdf, findSoffice } from './pptx-converter.js'
 import {
@@ -206,9 +208,17 @@ export function registerIpcHandlers(): void {
     store.patch({ currentSlide: clamped })
   })
 
-  ipcMain.handle('nav:next', () => {
-    const { currentSlide, totalSlides } = store.get()
-    if (currentSlide < totalSlides) store.patch({ currentSlide: currentSlide + 1 })
+  ipcMain.handle('nav:next', async () => {
+    const { currentSlide, totalSlides, autoAdvance, playlist, currentPlaylistId } = store.get()
+    if (currentSlide < totalSlides) {
+      store.patch({ currentSlide: currentSlide + 1 })
+      return
+    }
+    if (!autoAdvance || !currentPlaylistId || playlist.length === 0) return
+    const idx = playlist.findIndex((e) => e.id === currentPlaylistId)
+    if (idx < 0 || idx >= playlist.length - 1) return
+    const next = playlist[idx + 1]
+    await openFile(next.filePath, { playlistId: next.id, durationMs: next.durationMs })
   })
 
   ipcMain.handle('nav:prev', () => {
@@ -379,6 +389,18 @@ export function registerIpcHandlers(): void {
     return openFile(entry.filePath, { playlistId: id, durationMs: entry.durationMs })
   })
 
+  ipcMain.handle('playlist:set-compact', (_e, value: boolean) => {
+    const v = Boolean(value)
+    store.patch({ playlistCompact: v })
+    setPlaylistCompact(v)
+  })
+
+  ipcMain.handle('playlist:set-auto-advance', (_e, value: boolean) => {
+    const v = Boolean(value)
+    store.patch({ autoAdvance: v })
+    setAutoAdvance(v)
+  })
+
   ipcMain.handle('keyvisual:set', async (): Promise<{ path: string | null }> => {
     const op = getOperatorWindow()
     const res = await dialog.showOpenDialog(op!, {
@@ -455,7 +477,7 @@ export function registerIpcHandlers(): void {
         const res = await dialog.showSaveDialog(op!, {
           title: 'Сохранить проект',
           defaultPath: target ?? `presenter-project.${PROJECT_EXTENSION}`,
-          filters: [{ name: 'PDF Presenter project', extensions: [PROJECT_EXTENSION] }],
+          filters: [{ name: 'CueDeck project', extensions: [PROJECT_EXTENSION] }],
         })
         if (res.canceled || !res.filePath) return { ok: false }
         target = res.filePath
@@ -480,7 +502,7 @@ export function registerIpcHandlers(): void {
       const op = getOperatorWindow()
       const res = await dialog.showOpenDialog(op!, {
         title: 'Открыть проект',
-        filters: [{ name: 'PDF Presenter project', extensions: [PROJECT_EXTENSION] }],
+        filters: [{ name: 'CueDeck project', extensions: [PROJECT_EXTENSION] }],
         properties: ['openFile'],
       })
       if (res.canceled || res.filePaths.length === 0) return { ok: false }

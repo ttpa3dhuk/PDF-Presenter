@@ -61,7 +61,7 @@ function createWindow(role: Role, displayId: number | undefined, fullscreen: boo
     show: false,
     fullscreen: fullscreen && !DEV_TILE,
     backgroundColor: role === 'audience' ? '#000000' : '#1a1a1a',
-    title: `PDF Presenter — ${role}`,
+    title: `CueDeck — ${role}`,
     webPreferences: {
       preload: PRELOAD,
       contextIsolation: true,

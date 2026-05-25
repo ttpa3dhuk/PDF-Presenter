@@ -1,7 +1,7 @@
 {
-  "name": "pdf-presenter",
+  "name": "cue-deck",
   "version": "0.1.0",
-  "description": "PowerPoint-like Presenter View for PDF, PPTX and image files",
+  "description": "Presentation operator tool for live events — speaker playlist, per-speaker timers, confidence monitor, blackout",
   "author": "Azat Khusaenov",
   "main": "out/main/index.js",
   "type": "module",
@@ -28,8 +28,8 @@
     "pdfjs-dist": "^4.10.38"
   },
   "build": {
-    "appId": "com.azat.pdf-presenter",
-    "productName": "PDF Presenter",
+    "appId": "com.azat.cue-deck",
+    "productName": "CueDeck",
     "directories": {
       "output": "release"
     },
@@ -53,7 +53,7 @@
       "gatekeeperAssess": false
     },
     "dmg": {
-      "title": "PDF Presenter",
+      "title": "CueDeck",
       "writeUpdateInfo": false
     },
     "win": {

@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; worker-src 'self' blob:; img-src 'self' data: blob:;" />
-    <title>PDF Presenter</title>
+    <title>CueDeck</title>
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body data-role="">
@@ -27,16 +27,16 @@
         <div class="topbar-row timer-controls op-only">
           <div class="group">
             <label class="group-label">Длительность</label>
-            <input id="duration-input" type="number" min="0" step="1" value="30" />
+            <input id="duration-input" class="duration-editable" type="number" min="0" step="1" value="30" title="Введи число минут вручную" placeholder="мин" />
             <span class="suffix">мин</span>
+            <span class="edit-hint" title="Можно вводить вручную">✎</span>
           </div>
           <div class="group">
             <label class="group-label">Пресет</label>
+            <button class="preset" data-min="5">5</button>
+            <button class="preset" data-min="10">10</button>
             <button class="preset" data-min="15">15</button>
-            <button class="preset" data-min="30">30</button>
-            <button class="preset" data-min="45">45</button>
-            <button class="preset" data-min="60">60</button>
-            <button class="preset" data-min="90">90</button>
+            <button class="preset" data-min="20">20</button>
           </div>
           <div class="group">
             <label class="group-label">±</label>
@@ -77,6 +77,16 @@
             <span class="label">Спикеры</span>
             <button id="playlist-add" title="Добавить PDF / PPTX / изображение">+ Добавить</button>
           </div>
+          <div class="playlist-toggles">
+            <label class="toggle" title="Скрыть имя и таймер у каждого спикера">
+              <input id="playlist-compact-toggle" type="checkbox" />
+              <span>Компактно</span>
+            </label>
+            <label class="toggle" title="После последнего слайда автоматически перейти к следующему спикеру">
+              <input id="playlist-auto-advance-toggle" type="checkbox" />
+              <span>Автопереход</span>
+            </label>
+          </div>
           <ol id="playlist-list" class="playlist-list"></ol>
           <div id="playlist-empty" class="playlist-empty">
             Список пуст. Жми «+ Добавить», чтобы загрузить PDF спикеров.
@@ -92,18 +102,24 @@
             </div>
           </div>
         </aside>
-        <section class="current-slide">
+        <section id="current-slide" class="current-slide">
           <canvas id="current-canvas" class="hidden"></canvas>
           <img id="current-image" class="slide-image hidden" alt="" />
           <div id="slide-placeholder" class="slide-placeholder">
             <div class="placeholder-title">Нет активного спикера</div>
             <div class="placeholder-hint">Кликни по спикеру в списке слева<br/>или открой файл (Cmd+O)</div>
           </div>
+          <div id="blackout-indicator" class="blackout-banner hidden">
+            <span class="bo-badge">BLACKOUT</span>
+            <span class="bo-hint">Зрительский экран затемнён · оператор видит следующий слайд</span>
+          </div>
         </section>
         <aside class="sidebar">
           <div class="next-slide">
             <div class="label">Дальше</div>
-            <canvas id="next-canvas"></canvas>
+            <div id="next-frame" class="next-frame">
+              <canvas id="next-canvas"></canvas>
+            </div>
             <div id="next-empty" class="next-empty hidden">— одна страница —</div>
           </div>
           <div class="notes">

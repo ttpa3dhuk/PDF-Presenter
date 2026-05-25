@@ -18,12 +18,14 @@ interface PersistedShape {
   notesFontSize: number
   playlist: PlaylistEntry[]
   currentPlaylistId: string | null
+  playlistCompact: boolean
+  autoAdvance: boolean
   keyVisualPath: string | null
   projectPath: string | null
 }
 
 const store = new Store<PersistedShape>({
-  name: 'pdf-presenter',
+  name: 'cue-deck',
   defaults: {
     mappings: {},
     lastPdfPath: null,
@@ -34,6 +36,8 @@ const store = new Store<PersistedShape>({
     notesFontSize: 18,
     playlist: [],
     currentPlaylistId: null,
+    playlistCompact: false,
+    autoAdvance: false,
     keyVisualPath: null,
     projectPath: null,
   },
@@ -149,4 +153,20 @@ export function getProjectPath(): string | null {
 
 export function setProjectPath(path: string | null): void {
   store.set('projectPath', path)
+}
+
+export function getPlaylistCompact(): boolean {
+  return Boolean(store.get('playlistCompact'))
+}
+
+export function setPlaylistCompact(value: boolean): void {
+  store.set('playlistCompact', value)
+}
+
+export function getAutoAdvance(): boolean {
+  return Boolean(store.get('autoAdvance'))
+}
+
+export function setAutoAdvance(value: boolean): void {
+  store.set('autoAdvance', value)
 }
