@@ -61,7 +61,16 @@ xattr -cr "/Applications/PDF Presenter.app"
 
 #### PPTX-поддержка
 
-Для конвертации PowerPoint нужен **LibreOffice** (бесплатно):
+PPTX, PPT, ODP и Keynote **конвертируются в PDF** при открытии через LibreOffice. Это одноразовая операция — результат кешируется, повторно конвертировать не нужно.
+
+> ⚠️ **Важно понимать:**
+> - Файл конвертируется в PDF — **редактирование слайдов недоступно**
+> - **Анимации и переходы не воспроизводятся** — каждый анимированный шаг фиксируется как отдельный статичный слайд (если LibreOffice его развернул) или теряется
+> - Внешний вид слайдов может незначительно отличаться от оригинала — особенно нестандартные шрифты и сложные эффекты
+>
+> PDF Presenter — инструмент для **показа готовых материалов**, не для редактирования презентаций.
+
+Для конвертации нужен **LibreOffice** (бесплатно):
 
 - **Mac:** `brew install --cask libreoffice` или [libreoffice.org](https://www.libreoffice.org/download/download-libreoffice/)
 - **Windows:** установщик с [libreoffice.org](https://www.libreoffice.org/download/download-libreoffice/)
@@ -168,6 +177,15 @@ xattr -cr "/Applications/PDF Presenter.app"
 3. SmartScreen will warn you → `More info` → `Run anyway`.
 
 #### PPTX support
+
+PPTX, PPT, ODP and Keynote files are **converted to PDF** on open via LibreOffice. This is a one-time operation — the result is cached, no re-conversion on subsequent opens.
+
+> ⚠️ **Important limitations:**
+> - The file is converted to PDF — **slide editing is not available**
+> - **Animations and transitions are not played** — each animated step is either rendered as a separate static slide (if LibreOffice expanded it) or lost entirely
+> - Slide appearance may differ slightly from the original — especially custom fonts and complex effects
+>
+> PDF Presenter is a tool for **presenting finished materials**, not editing presentations.
 
 Converting PowerPoint files requires **LibreOffice** (free):
 
