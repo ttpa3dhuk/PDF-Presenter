@@ -30,9 +30,19 @@ const modeSelect = role === 'operator' ? $<HTMLSelectElement>('mode-select') : n
 const playlistList = role === 'operator' ? $<HTMLOListElement>('playlist-list') : null
 const playlistEmpty = role === 'operator' ? $('playlist-empty') : null
 const playlistAddBtn = role === 'operator' ? $<HTMLButtonElement>('playlist-add') : null
+const playlistCompactToggle = role === 'operator' ? $<HTMLInputElement>('playlist-compact-toggle') : null
+const playlistAutoAdvanceToggle = role === 'operator' ? $<HTMLInputElement>('playlist-auto-advance-toggle') : null
 const kvPreview = role === 'operator' ? $('kv-preview') : null
 const kvSetBtn = role === 'operator' ? $<HTMLButtonElement>('kv-set') : null
 const kvClearBtn = role === 'operator' ? $<HTMLButtonElement>('kv-clear') : null
+
+let sofficePresentCache: boolean | null = null
+
+async function checkSoffice(): Promise<boolean> {
+  if (sofficePresentCache !== null) return sofficePresentCache
+  sofficePresentCache = await window.api.soffice.check()
+  return sofficePresentCache
+}
 
 let kvBlobUrl: string | null = null
 let kvLoadedForPath: string | null | undefined = undefined
@@ -241,6 +251,11 @@ function createPlaylistItem(entry: PlaylistEntry): HTMLLIElement {
 
   li.addEventListener('click', async () => {
     if (entry.kind === 'pptx') {
+      const hasLo = await checkSoffice()
+      if (!hasLo) {
+        showLoModal()
+        return
+      }
       showBanner('Конвертация PPTX через LibreOffice…', 60_000)
     }
     const res = await window.api.playlist.activate(entry.id)
@@ -306,6 +321,17 @@ function reorderAroundTarget(draggedId: string, targetId: string): void {
   window.api.playlist.reorder(ids)
 }
 
+function updateLibreOfficeNotice(state: AppState): void {
+  const notice = document.getElementById('libreoffice-notice')
+  if (!notice) return
+  const hasPptx = state.playlist.some((e) => e.kind === 'pptx')
+  if (hasPptx && sofficePresentCache === false) {
+    notice.classList.remove('hidden')
+  } else {
+    notice.classList.add('hidden')
+  }
+}
+
 function renderPlaylist(state: AppState): void {
   if (!playlistList || !playlistEmpty) return
 
@@ -335,6 +361,8 @@ function renderPlaylist(state: AppState): void {
   for (const [id, node] of playlistNodes) {
     node.classList.toggle('active', id === state.currentPlaylistId)
   }
+
+  updateLibreOfficeNotice(state)
 }
 
 function applyState(state: AppState): void {
@@ -394,6 +422,14 @@ function applyState(state: AppState): void {
     notesReadonly.textContent = noteText
   }
 
+  if (playlistCompactToggle && playlistCompactToggle.checked !== state.playlistCompact) {
+    playlistCompactToggle.checked = state.playlistCompact
+    playlistList?.classList.toggle('compact', state.playlistCompact)
+  }
+  if (playlistAutoAdvanceToggle && playlistAutoAdvanceToggle.checked !== state.autoAdvance) {
+    playlistAutoAdvanceToggle.checked = state.autoAdvance
+  }
+
   renderPlaylist(state)
   refreshKeyVisualPreview(state).catch(() => undefined)
 }
@@ -448,6 +484,24 @@ async function openPdf(): Promise<void> {
   if (res.ok && res.sha1Mismatch) showBanner('Заметки в sidecar-файле относятся к другому PDF. Перезаписать их.')
 }
 
+function showHelpModal(): void {
+  document.getElementById('help-modal')?.classList.remove('hidden')
+}
+
+function hideHelpModal(): void {
+  document.getElementById('help-modal')?.classList.add('hidden')
+}
+
+function showLoModal(): void {
+  const modal = document.getElementById('lo-modal')
+  modal?.classList.remove('hidden')
+}
+
+function hideLoModal(): void {
+  const modal = document.getElementById('lo-modal')
+  modal?.classList.add('hidden')
+}
+
 function showBanner(text: string, ms: number = 4000): void {
   banner.textContent = text
   banner.classList.remove('hidden')
@@ -458,9 +512,10 @@ function setupKeyboard(): void {
   if (role !== 'operator') return
   window.addEventListener('keydown', (e) => {
     if (e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement) return
-    switch (e.key) {
+    // e.code — физическая позиция клавиши, не зависит от языка раскладки
+    switch (e.code) {
       case 'ArrowRight':
-      case ' ':
+      case 'Space':
         e.preventDefault()
         window.api.nav.next()
         break
@@ -468,18 +523,20 @@ function setupKeyboard(): void {
         e.preventDefault()
         window.api.nav.prev()
         break
-      case 'b':
-      case 'B':
+      case 'KeyB':
         e.preventDefault()
         window.api.blackout.toggle()
         break
-      case 't':
+      case 'KeyT':
         e.preventDefault()
-        toggleTimer()
+        if (e.shiftKey) window.api.timer.reset()
+        else toggleTimer()
         break
-      case 'T':
-        e.preventDefault()
-        window.api.timer.reset()
+      case 'Slash':
+        if (e.shiftKey) { // Shift+/ = ?
+          e.preventDefault()
+          showHelpModal()
+        }
         break
     }
   })
@@ -562,6 +619,32 @@ function setupOperatorControls(): void {
     window.api.playlist.add()
   })
 
+  // Compact toggle
+  playlistCompactToggle!.addEventListener('change', () => {
+    const v = playlistCompactToggle!.checked
+    playlistList?.classList.toggle('compact', v)
+    window.api.playlist.setCompact(v)
+  })
+
+  // Auto-advance toggle
+  playlistAutoAdvanceToggle!.addEventListener('change', () => {
+    window.api.playlist.setAutoAdvance(playlistAutoAdvanceToggle!.checked)
+  })
+
+  // LibreOffice notice + install modal
+  document.getElementById('lo-install-btn')?.addEventListener('click', showLoModal)
+  document.getElementById('lo-modal-close')?.addEventListener('click', hideLoModal)
+  document.getElementById('lo-download-btn')?.addEventListener('click', () => {
+    window.api.external.open('https://www.libreoffice.org/download/download-libreoffice/')
+  })
+  document.getElementById('lo-copy-btn')?.addEventListener('click', (e) => {
+    navigator.clipboard.writeText('brew install --cask libreoffice').catch(() => undefined)
+    const btn = e.currentTarget as HTMLButtonElement
+    const prev = btn.textContent
+    btn.textContent = '✓'
+    window.setTimeout(() => { btn.textContent = prev }, 1500)
+  })
+
   // Key visual
   kvSetBtn!.addEventListener('click', () => {
     window.api.keyvisual.set()
@@ -569,6 +652,11 @@ function setupOperatorControls(): void {
   kvClearBtn!.addEventListener('click', () => {
     window.api.keyvisual.clear()
   })
+
+  // Help button + menu
+  $<HTMLButtonElement>('help-btn').addEventListener('click', showHelpModal)
+  document.getElementById('help-modal-close')?.addEventListener('click', hideHelpModal)
+  window.api.menu.onHelp(() => showHelpModal())
 
   // Project menu (from macOS menubar)
   window.api.menu.onProjectNew(() => projectNew())
@@ -679,6 +767,13 @@ async function bootstrap(): Promise<void> {
   await initBus()
   setupOperatorControls()
   setupKeyboard()
+
+  // Pre-check LibreOffice so the notice shows immediately if needed
+  if (role === 'operator') {
+    checkSoffice().then((has) => {
+      if (!has) updateLibreOfficeNotice(getState())
+    }).catch(() => undefined)
+  }
 
   subscribe((state, patch) => {
     handleStateChange(state, patch).catch((err) => showBanner(`Ошибка: ${err.message}`))

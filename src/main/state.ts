@@ -40,6 +40,8 @@ export interface AppState {
   displayMap: DisplayMap
   playlist: PlaylistEntry[]
   currentPlaylistId: string | null
+  playlistCompact: boolean
+  autoAdvance: boolean
   keyVisualPath: string | null
   projectPath: string | null
 }
@@ -64,6 +66,8 @@ export function initialState(): AppState {
     displayMap: {},
     playlist: [],
     currentPlaylistId: null,
+    playlistCompact: false,
+    autoAdvance: false,
     keyVisualPath: null,
     projectPath: null,
   }

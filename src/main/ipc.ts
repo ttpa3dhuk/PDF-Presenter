@@ -442,6 +442,10 @@ export function registerIpcHandlers(): void {
     }
   })
 
+  ipcMain.handle('soffice:check', async () => {
+    return Boolean(await findSoffice())
+  })
+
   ipcMain.handle('state:get', () => store.get())
 
   ipcMain.handle('sidecar:path', (_e, pdfPath: string) => sidecarPathFor(pdfPath))

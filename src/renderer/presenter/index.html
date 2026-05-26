@@ -18,6 +18,17 @@
             <span id="slide-remaining" class="slide-remaining"></span>
           </div>
           <div class="topbar-right">
+            <div class="group op-only">
+              <button id="timer-scale-down" title="Меньше">A−</button>
+              <span id="timer-scale-value" class="scale-value">100%</span>
+              <button id="timer-scale-up" title="Больше">A+</button>
+            </div>
+            <div class="group position-group op-only">
+              <button class="position-btn" data-pos="top-left" title="Верхний левый">↖</button>
+              <button class="position-btn" data-pos="top-right" title="Верхний правый">↗</button>
+              <button class="position-btn" data-pos="bottom-left" title="Нижний левый">↙</button>
+              <button class="position-btn" data-pos="bottom-right" title="Нижний правый">↘</button>
+            </div>
             <span id="timer-display" class="timer font-system green">00:00</span>
             <button id="timer-toggle" class="op-only" title="Start/Pause (T)">▶</button>
             <button id="timer-reset" class="op-only" title="Reset (Shift+T)">⟲</button>
@@ -55,19 +66,6 @@
               <option value="clock">Часы</option>
             </select>
           </div>
-          <div class="group">
-            <label class="group-label">Размер</label>
-            <button id="timer-scale-down" title="Меньше">A−</button>
-            <span id="timer-scale-value" class="scale-value">100%</span>
-            <button id="timer-scale-up" title="Больше">A+</button>
-          </div>
-          <div class="group position-group">
-            <label class="group-label">Позиция</label>
-            <button class="position-btn" data-pos="top-left" title="Верхний левый">↖</button>
-            <button class="position-btn" data-pos="top-right" title="Верхний правый">↗</button>
-            <button class="position-btn" data-pos="bottom-left" title="Нижний левый">↙</button>
-            <button class="position-btn" data-pos="bottom-right" title="Нижний правый">↘</button>
-          </div>
         </div>
       </header>
 
@@ -86,6 +84,14 @@
               <input id="playlist-auto-advance-toggle" type="checkbox" />
               <span>Автопереход</span>
             </label>
+          </div>
+          <div id="libreoffice-notice" class="lo-notice hidden">
+            <span class="lo-icon">⚠️</span>
+            <div class="lo-body">
+              <strong>LibreOffice не установлен</strong>
+              <span>Нужен для открытия PPTX / PPT / KEY файлов</span>
+            </div>
+            <button id="lo-install-btn" class="lo-btn">Как установить</button>
           </div>
           <ol id="playlist-list" class="playlist-list"></ol>
           <div id="playlist-empty" class="playlist-empty">
@@ -145,6 +151,7 @@
         </div>
         <div class="bottombar-right">
           <button id="display-setup">Настройка экранов…</button>
+          <button id="help-btn" title="Горячие клавиши (?)">?</button>
         </div>
       </footer>
 
@@ -168,6 +175,62 @@
         <div class="modal-actions">
           <button id="setup-cancel">Отмена</button>
           <button id="setup-apply" class="primary">Применить</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="help-modal" class="modal hidden">
+      <div class="modal-content help-modal-content">
+        <h2>Горячие клавиши</h2>
+        <table class="help-table">
+          <tbody>
+            <tr class="help-section"><td colspan="2">Навигация</td></tr>
+            <tr><td><kbd>→</kbd> <kbd>Space</kbd></td><td>Следующий слайд</td></tr>
+            <tr><td><kbd>←</kbd></td><td>Предыдущий слайд</td></tr>
+            <tr class="help-section"><td colspan="2">Таймер</td></tr>
+            <tr><td><kbd>T</kbd></td><td>Старт / Пауза таймера</td></tr>
+            <tr><td><kbd>Shift</kbd> <kbd>T</kbd></td><td>Сбросить таймер</td></tr>
+            <tr class="help-section"><td colspan="2">Экраны</td></tr>
+            <tr><td><kbd>B</kbd></td><td>Blackout — затемнить проектор</td></tr>
+            <tr class="help-section"><td colspan="2">Файлы и проект</td></tr>
+            <tr><td><kbd>⌘</kbd> <kbd>O</kbd></td><td>Открыть PDF / PPTX…</td></tr>
+            <tr><td><kbd>⌘</kbd> <kbd>N</kbd></td><td>Новый проект</td></tr>
+            <tr><td><kbd>⌘</kbd> <kbd>S</kbd></td><td>Сохранить проект</td></tr>
+            <tr><td><kbd>⌘</kbd> <kbd>Shift</kbd> <kbd>S</kbd></td><td>Сохранить как…</td></tr>
+            <tr><td><kbd>⌘</kbd> <kbd>Shift</kbd> <kbd>O</kbd></td><td>Открыть проект…</td></tr>
+            <tr class="help-section"><td colspan="2">Прочее</td></tr>
+            <tr><td><kbd>⌘</kbd> <kbd>,</kbd></td><td>Настройка экранов</td></tr>
+            <tr><td><kbd>?</kbd></td><td>Эта справка</td></tr>
+          </tbody>
+        </table>
+        <p class="help-note">Клавиши B и T работают на любой раскладке (рус / eng).</p>
+        <div class="modal-actions">
+          <button id="help-modal-close" class="primary">Закрыть</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="lo-modal" class="modal hidden">
+      <div class="modal-content lo-modal-content">
+        <div class="lo-modal-icon">📦</div>
+        <h2>Нужен LibreOffice</h2>
+        <p class="lo-modal-subtitle">CueDeck использует LibreOffice для конвертации PPTX, PPT и KEY файлов в PDF.</p>
+        <div class="lo-install-option">
+          <div class="lo-option-label">Вариант 1 — скачать установщик</div>
+          <button id="lo-download-btn" class="primary lo-download-btn">
+            Скачать LibreOffice → libreoffice.org
+          </button>
+        </div>
+        <div class="lo-install-option">
+          <div class="lo-option-label">Вариант 2 — через Homebrew (терминал)</div>
+          <div class="lo-code-block">
+            <code>brew install --cask libreoffice</code>
+            <button id="lo-copy-btn" class="lo-copy-btn" title="Скопировать">⧉</button>
+          </div>
+        </div>
+        <p class="lo-modal-note">После установки перезапусти CueDeck.</p>
+        <div class="modal-actions">
+          <button id="lo-modal-close">Закрыть</button>
         </div>
       </div>
     </div>

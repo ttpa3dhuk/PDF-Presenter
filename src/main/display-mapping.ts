@@ -24,24 +24,30 @@ interface PersistedShape {
   projectPath: string | null
 }
 
-const store = new Store<PersistedShape>({
-  name: 'cue-deck',
-  defaults: {
-    mappings: {},
-    lastPdfPath: null,
-    lastDurationMs: 30 * 60 * 1000,
-    timerMode: 'countdown',
-    timerPosition: 'top-right',
-    timerScale: 1,
-    notesFontSize: 18,
-    playlist: [],
-    currentPlaylistId: null,
-    playlistCompact: false,
-    autoAdvance: false,
-    keyVisualPath: null,
-    projectPath: null,
-  },
-})
+const STORE_DEFAULTS: PersistedShape = {
+  mappings: {},
+  lastPdfPath: null,
+  lastDurationMs: 30 * 60 * 1000,
+  timerMode: 'countdown',
+  timerPosition: 'top-right',
+  timerScale: 1,
+  notesFontSize: 18,
+  playlist: [],
+  currentPlaylistId: null,
+  playlistCompact: false,
+  autoAdvance: false,
+  keyVisualPath: null,
+  projectPath: null,
+}
+
+let _store: Store<PersistedShape> | null = null
+
+function store(): Store<PersistedShape> {
+  if (!_store) {
+    _store = new Store<PersistedShape>({ name: 'cue-deck', defaults: STORE_DEFAULTS })
+  }
+  return _store
+}
 
 function topologyKey(displayIds: number[]): string {
   return [...displayIds].sort((a, b) => a - b).join(',')
@@ -53,67 +59,67 @@ export function currentTopologyKey(): string {
 
 export function getSavedMapping(): SavedMapping | null {
   const key = currentTopologyKey()
-  const mappings = store.get('mappings')
+  const mappings = store().get('mappings')
   return mappings[key] ?? null
 }
 
 export function saveMapping(layout: Layout, displayMap: DisplayMap): void {
   const key = currentTopologyKey()
-  const mappings = store.get('mappings')
+  const mappings = store().get('mappings')
   mappings[key] = { layout, displayMap }
-  store.set('mappings', mappings)
+  store().set('mappings', mappings)
 }
 
 export function getLastPdfPath(): string | null {
-  return store.get('lastPdfPath')
+  return store().get('lastPdfPath')
 }
 
 export function setLastPdfPath(path: string | null): void {
-  store.set('lastPdfPath', path)
+  store().set('lastPdfPath', path)
 }
 
 export function getLastDurationMs(): number {
-  return store.get('lastDurationMs')
+  return store().get('lastDurationMs')
 }
 
 export function setLastDurationMs(ms: number): void {
-  store.set('lastDurationMs', ms)
+  store().set('lastDurationMs', ms)
 }
 
 export function getTimerMode(): TimerMode {
-  return store.get('timerMode')
+  return store().get('timerMode')
 }
 
 export function setTimerMode(mode: TimerMode): void {
-  store.set('timerMode', mode)
+  store().set('timerMode', mode)
 }
 
 export function getTimerPosition(): TimerPosition {
-  return store.get('timerPosition')
+  return store().get('timerPosition')
 }
 
 export function setTimerPosition(pos: TimerPosition): void {
-  store.set('timerPosition', pos)
+  store().set('timerPosition', pos)
 }
 
 export function getTimerScale(): number {
-  return store.get('timerScale')
+  return store().get('timerScale')
 }
 
 export function setTimerScale(scale: number): void {
-  store.set('timerScale', scale)
+  store().set('timerScale', scale)
 }
 
 export function getNotesFontSize(): number {
-  return store.get('notesFontSize')
+  return store().get('notesFontSize')
 }
 
 export function setNotesFontSize(px: number): void {
-  store.set('notesFontSize', px)
+  store().set('notesFontSize', px)
 }
 
 export function getPlaylist(): PlaylistEntry[] {
-  const raw = store.get('playlist') as unknown[]
+  const raw = store().get('playlist') as unknown[]
   return raw.map((e) => {
     const v = e as Record<string, unknown>
     return {
@@ -128,45 +134,45 @@ export function getPlaylist(): PlaylistEntry[] {
 }
 
 export function setPlaylist(playlist: PlaylistEntry[]): void {
-  store.set('playlist', playlist)
+  store().set('playlist', playlist)
 }
 
 export function getCurrentPlaylistId(): string | null {
-  return store.get('currentPlaylistId')
+  return store().get('currentPlaylistId')
 }
 
 export function setCurrentPlaylistId(id: string | null): void {
-  store.set('currentPlaylistId', id)
+  store().set('currentPlaylistId', id)
 }
 
 export function getKeyVisualPath(): string | null {
-  return store.get('keyVisualPath')
+  return store().get('keyVisualPath')
 }
 
 export function setKeyVisualPath(path: string | null): void {
-  store.set('keyVisualPath', path)
+  store().set('keyVisualPath', path)
 }
 
 export function getProjectPath(): string | null {
-  return store.get('projectPath')
+  return store().get('projectPath')
 }
 
 export function setProjectPath(path: string | null): void {
-  store.set('projectPath', path)
+  store().set('projectPath', path)
 }
 
 export function getPlaylistCompact(): boolean {
-  return Boolean(store.get('playlistCompact'))
+  return Boolean(store().get('playlistCompact'))
 }
 
 export function setPlaylistCompact(value: boolean): void {
-  store.set('playlistCompact', value)
+  store().set('playlistCompact', value)
 }
 
 export function getAutoAdvance(): boolean {
-  return Boolean(store.get('autoAdvance'))
+  return Boolean(store().get('autoAdvance'))
 }
 
 export function setAutoAdvance(value: boolean): void {
-  store.set('autoAdvance', value)
+  store().set('autoAdvance', value)
 }

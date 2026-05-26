@@ -41,6 +41,8 @@ export interface AppState {
   displayMap: DisplayMap
   playlist: PlaylistEntry[]
   currentPlaylistId: string | null
+  playlistCompact: boolean
+  autoAdvance: boolean
   keyVisualPath: string | null
   projectPath: string | null
 }
@@ -111,6 +113,8 @@ export interface PresenterApi {
     reorder(ids: string[]): Promise<void>
     update(id: string, payload: { speakerName?: string; durationMs?: number }): Promise<void>
     activate(id: string): Promise<OpenPdfResult>
+    setCompact(value: boolean): Promise<void>
+    setAutoAdvance(value: boolean): Promise<void>
   }
   keyvisual: {
     set(): Promise<{ path: string | null }>
@@ -130,9 +134,13 @@ export interface PresenterApi {
     onProjectOpen(cb: () => void): Unsubscribe
     onProjectSave(cb: () => void): Unsubscribe
     onProjectSaveAs(cb: () => void): Unsubscribe
+    onHelp(cb: () => void): Unsubscribe
   }
   update: {
     onAvailable(cb: (info: { newerVersion: string; url: string }) => void): Unsubscribe
+  }
+  soffice: {
+    check(): Promise<boolean>
   }
   external: {
     open(url: string): Promise<void>

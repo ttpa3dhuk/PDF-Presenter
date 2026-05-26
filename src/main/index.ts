@@ -16,6 +16,8 @@ import {
   getCurrentPlaylistId,
   getKeyVisualPath,
   getProjectPath,
+  getPlaylistCompact,
+  getAutoAdvance,
 } from './display-mapping.js'
 import { store } from './state.js'
 import { computePdfSha1, loadNotes } from './notes-store.js'
@@ -84,6 +86,16 @@ function buildMenu(): void {
         { role: 'toggleDevTools' },
         { type: 'separator' },
         { role: 'togglefullscreen' },
+      ],
+    },
+    {
+      label: 'Help',
+      submenu: [
+        {
+          label: 'Горячие клавиши…',
+          accelerator: 'Shift+/',
+          click: () => sendToOperator('menu:help'),
+        },
       ],
     },
   ]
@@ -171,6 +183,8 @@ app.whenReady().then(async () => {
     notesFontSize: getNotesFontSize(),
     playlist: getPlaylist(),
     currentPlaylistId: getCurrentPlaylistId(),
+    playlistCompact: getPlaylistCompact(),
+    autoAdvance: getAutoAdvance(),
     keyVisualPath: getKeyVisualPath(),
     projectPath: getProjectPath(),
   })

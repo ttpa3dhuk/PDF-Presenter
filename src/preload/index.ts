@@ -55,6 +55,8 @@ const api: PresenterApi = {
     reorder: (ids) => ipcRenderer.invoke('playlist:reorder', ids),
     update: (id, payload) => ipcRenderer.invoke('playlist:update', { id, ...payload }),
     activate: (id) => ipcRenderer.invoke('playlist:activate', id),
+    setCompact: (value) => ipcRenderer.invoke('playlist:set-compact', value),
+    setAutoAdvance: (value) => ipcRenderer.invoke('playlist:set-auto-advance', value),
   },
   keyvisual: {
     set: () => ipcRenderer.invoke('keyvisual:set'),
@@ -102,6 +104,11 @@ const api: PresenterApi = {
       ipcRenderer.on('menu:project-save-as', listener)
       return () => ipcRenderer.removeListener('menu:project-save-as', listener)
     },
+    onHelp: (cb) => {
+      const listener = () => cb()
+      ipcRenderer.on('menu:help', listener)
+      return () => ipcRenderer.removeListener('menu:help', listener)
+    },
   },
   update: {
     onAvailable: (cb) => {
@@ -110,6 +117,9 @@ const api: PresenterApi = {
       ipcRenderer.on('update:available', listener)
       return () => ipcRenderer.removeListener('update:available', listener)
     },
+  },
+  soffice: {
+    check: () => ipcRenderer.invoke('soffice:check'),
   },
   external: {
     open: (url) => ipcRenderer.invoke('external:open', url),

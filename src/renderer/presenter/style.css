@@ -220,6 +220,29 @@ body[data-role="speaker"] .grid {
   font-size: 12px;
   padding: 4px 8px;
 }
+.playlist-toggles {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+.toggle input[type="checkbox"] {
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+/* Compact mode: hide speaker name and duration row in playlist items */
+.playlist-list.compact .playlist-item .speaker-name,
+.playlist-list.compact .playlist-item .duration-row {
+  display: none;
+}
 .playlist-list {
   list-style: none;
   padding: 0;
@@ -336,6 +359,158 @@ body[data-role="speaker"] .grid {
   width: 48px;
   text-align: right;
   font-family: inherit;
+}
+
+/* Help modal */
+.help-modal-content {
+  width: 420px;
+}
+.help-modal-content h2 {
+  margin: 0 0 16px;
+  font-size: 16px;
+  font-weight: 600;
+}
+.help-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.help-table td {
+  padding: 5px 8px;
+  vertical-align: middle;
+}
+.help-table td:first-child {
+  white-space: nowrap;
+  color: var(--muted);
+  width: 1%;
+}
+.help-table tr.help-section td {
+  padding: 12px 8px 4px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+}
+.help-table tr.help-section:first-child td {
+  border-top: none;
+  padding-top: 0;
+}
+kbd {
+  display: inline-block;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.6;
+  color: var(--text);
+}
+.help-note {
+  margin: 12px 0 0;
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* LibreOffice notice in playlist */
+.lo-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(245, 193, 76, 0.12);
+  border: 1px solid rgba(245, 193, 76, 0.4);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 12px;
+}
+.lo-notice.hidden { display: none; }
+.lo-icon { font-size: 16px; flex-shrink: 0; }
+.lo-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.lo-body strong {
+  color: var(--timer-yellow);
+  font-size: 12px;
+  font-weight: 600;
+}
+.lo-body span { color: var(--muted); font-size: 11px; }
+.lo-btn {
+  font-size: 11px;
+  padding: 3px 8px;
+  flex-shrink: 0;
+  border-color: rgba(245, 193, 76, 0.4);
+  color: var(--timer-yellow);
+}
+.lo-btn:hover { border-color: var(--timer-yellow); }
+
+/* LibreOffice install modal */
+.lo-modal-content {
+  max-width: 440px;
+  text-align: center;
+}
+.lo-modal-icon { font-size: 40px; line-height: 1; margin-bottom: 4px; }
+.lo-modal-content h2 { font-size: 18px; font-weight: 600; margin: 0; }
+.lo-modal-subtitle {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 8px 0 16px;
+  line-height: 1.5;
+}
+.lo-install-option {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.lo-option-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.lo-download-btn {
+  width: 100%;
+  padding: 10px 16px;
+  font-size: 13px;
+}
+.lo-code-block {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+.lo-code-block code {
+  flex: 1;
+  font-family: "SF Mono", "Fira Mono", "Menlo", monospace;
+  font-size: 13px;
+  color: #a8d8a8;
+  user-select: all;
+}
+.lo-copy-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 13px;
+  padding: 2px 7px;
+  flex-shrink: 0;
+}
+.lo-copy-btn:hover { color: var(--text); border-color: #3a4252; }
+.lo-modal-note {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 4px 0 0;
 }
 
 body[data-role="speaker"] .playlist { display: none !important; }
