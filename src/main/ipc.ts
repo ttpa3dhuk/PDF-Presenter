@@ -10,7 +10,7 @@ import type {
   TimerPosition,
 } from './state.js'
 import { store } from './state.js'
-import { computePdfSha1, loadNotes, notesWriter, sidecarPathFor } from './notes-store.js'
+import { computePdfSha1, loadNotes, notesWriter, sha1FromBuffer, sidecarPathFor } from './notes-store.js'
 import { applyLayout, getOperatorWindow } from './windows.js'
 import {
   saveMapping,
@@ -96,17 +96,25 @@ async function openFile(
     const kind = kindOf(filePath)
     if (!kind) return { ok: false, error: 'Неподдерживаемый формат файла' }
 
-    const sha1 = await computePdfSha1(filePath)
-    const loaded = await loadNotes(filePath, sha1)
+    let sha1: string
     let totalSlides = 1
+
     if (kind === 'pdf') {
+      // Single read: compute SHA1 and count pages from the same buffer.
       const buf = await readFile(filePath)
+      sha1 = sha1FromBuffer(buf)
       totalSlides = countPdfPages(buf)
     } else if (kind === 'pptx') {
+      sha1 = await computePdfSha1(filePath)
       const cachedPath = await convertPptxToPdf(filePath, sha1)
       const buf = await readFile(cachedPath)
       totalSlides = countPdfPages(buf)
+    } else {
+      // image: totalSlides stays 1, just need SHA1
+      sha1 = await computePdfSha1(filePath)
     }
+
+    const loaded = await loadNotes(filePath, sha1)
 
     const playlistId = opts.playlistId ?? null
     const timerPatch: Partial<import('./state.js').TimerState> = {

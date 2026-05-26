@@ -20,7 +20,7 @@ import {
   getAutoAdvance,
 } from './display-mapping.js'
 import { store } from './state.js'
-import { computePdfSha1, loadNotes } from './notes-store.js'
+import { computePdfSha1, loadNotes, sha1FromBuffer } from './notes-store.js'
 import { readFile } from 'node:fs/promises'
 
 function buildMenu(): void {
@@ -113,14 +113,21 @@ async function restoreLastPdf(): Promise<void> {
   const kind = kindOf(lastPath)
   if (!kind) return
   try {
-    const buf = await readFile(lastPath)
-    const sha1 = await computePdfSha1(lastPath)
-    const loaded = await loadNotes(lastPath, sha1)
+    let sha1: string
     let totalSlides = 1
+
     if (kind === 'pdf') {
+      // Single read: compute SHA1 and count pages from the same buffer.
+      const buf = await readFile(lastPath)
+      sha1 = sha1FromBuffer(buf)
       const text = buf.toString('latin1')
       totalSlides = (text.match(/\/Type\s*\/Page(?!s)/g) ?? []).length
+    } else {
+      // Images and PPTX: only need SHA1; page count is 1 or comes from renderer.
+      sha1 = await computePdfSha1(lastPath)
     }
+
+    const loaded = await loadNotes(lastPath, sha1)
     store.patch({
       pdfPath: lastPath,
       pdfSha1: sha1,

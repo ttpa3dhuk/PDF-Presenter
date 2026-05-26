@@ -28,6 +28,11 @@ export async function computePdfSha1(pdfPath: string): Promise<string> {
   return createHash('sha1').update(buf).digest('hex')
 }
 
+/** Compute SHA1 from an already-loaded buffer — avoids a second disk read. */
+export function sha1FromBuffer(buf: Buffer): string {
+  return createHash('sha1').update(buf).digest('hex')
+}
+
 export async function loadNotes(pdfPath: string, currentSha1: string): Promise<LoadedNotes> {
   const sidecarPath = sidecarPathFor(pdfPath)
   try {
