@@ -46,13 +46,6 @@
     "mac": {
       "target": [
         {
-          "target": "dmg",
-          "arch": [
-            "arm64",
-            "x64"
-          ]
-        },
-        {
           "target": "zip",
           "arch": [
             "arm64",
@@ -64,10 +57,6 @@
       "identity": "-",
       "hardenedRuntime": false,
       "gatekeeperAssess": false
-    },
-    "dmg": {
-      "title": "CueDeck",
-      "writeUpdateInfo": false
     },
     "win": {
       "target": [
