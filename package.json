@@ -11,9 +11,9 @@
     "preview": "electron-vite preview",
     "start": "electron-vite preview",
     "typecheck": "tsc --noEmit",
-    "package:mac": "electron-vite build && electron-builder --mac --publish=never",
+    "package:mac": "electron-vite build && electron-builder --mac --publish=never && node scripts/rename-mac.cjs",
     "package:win": "electron-vite build && electron-builder --win --publish=never",
-    "package:all": "electron-vite build && electron-builder -mw --publish=never"
+    "package:all": "electron-vite build && electron-builder -mw --publish=never && node scripts/rename-mac.cjs"
   },
   "devDependencies": {
     "@types/node": "^22.10.5",
