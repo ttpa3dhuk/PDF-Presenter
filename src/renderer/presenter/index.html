@@ -11,6 +11,12 @@
       <header class="topbar">
         <div class="topbar-row main">
           <div class="topbar-left">
+            <div class="session-btns op-only">
+              <button id="btn-new"  title="Новый проект (Cmd+N)">Новый</button>
+              <button id="btn-open" title="Открыть PDF / PPTX… (Cmd+O)">Открыть</button>
+              <button id="btn-save" title="Сохранить проект (Cmd+S)">Сохранить</button>
+              <button id="btn-last" title="Открыть последнюю сессию" disabled>Последний</button>
+            </div>
             <span id="pdf-name" class="pdf-name"></span>
           </div>
           <div class="topbar-center">
@@ -137,7 +143,7 @@
                 <button id="notes-font-up" title="Увеличить шрифт заметок">A+</button>
               </div>
             </div>
-            <textarea id="notes-input" class="op-only" placeholder="Заметка к этому слайду…"></textarea>
+            <textarea id="notes-input" class="op-only" rows="1" placeholder="Заметка к этому слайду…"></textarea>
             <div id="notes-readonly" class="speaker-only notes-readonly"></div>
           </div>
         </aside>
@@ -172,6 +178,12 @@
           <label><input type="radio" name="layout" value="operator-speaker-audience" /> 3 экрана (+ суфлёр клиента)</label>
         </div>
         <div id="role-mapping" class="role-mapping"></div>
+        <div id="audience-windowed-section" class="windowed-section hidden">
+          <label class="windowed-label">
+            <input id="audience-windowed-toggle" type="checkbox" />
+            <span>Аудитория в окне <span class="windowed-hint">(для захвата в Zoom / OBS)</span></span>
+          </label>
+        </div>
         <div class="modal-actions">
           <button id="setup-cancel">Отмена</button>
           <button id="setup-apply" class="primary">Применить</button>
@@ -190,6 +202,8 @@
             <tr class="help-section"><td colspan="2">Таймер</td></tr>
             <tr><td><kbd>T</kbd></td><td>Старт / Пауза таймера</td></tr>
             <tr><td><kbd>Shift</kbd> <kbd>T</kbd></td><td>Сбросить таймер</td></tr>
+            <tr><td><kbd>Shift</kbd> <kbd>1</kbd> / <kbd>3</kbd> / <kbd>5</kbd></td><td>+1 / +3 / +5 минут</td></tr>
+            <tr><td><kbd>Ctrl</kbd> <kbd>1</kbd> / <kbd>3</kbd> / <kbd>5</kbd></td><td>−1 / −3 / −5 минут</td></tr>
             <tr class="help-section"><td colspan="2">Экраны</td></tr>
             <tr><td><kbd>B</kbd></td><td>Blackout — затемнить проектор</td></tr>
             <tr class="help-section"><td colspan="2">Файлы и проект</td></tr>

@@ -44,6 +44,7 @@ export interface AppState {
   autoAdvance: boolean
   keyVisualPath: string | null
   projectPath: string | null
+  audienceWindowed: boolean
 }
 
 const DEFAULT_DURATION_MS = 30 * 60 * 1000
@@ -70,6 +71,7 @@ export function initialState(): AppState {
     autoAdvance: false,
     keyVisualPath: null,
     projectPath: null,
+    audienceWindowed: false,
   }
 }
 

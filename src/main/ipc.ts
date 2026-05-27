@@ -14,6 +14,11 @@ import { computePdfSha1, loadNotes, notesWriter, sha1FromBuffer, sidecarPathFor 
 import { applyLayout, getOperatorWindow } from './windows.js'
 import {
   saveMapping,
+  getLastPdfPath,
+  getPlaylist,
+  getCurrentPlaylistId,
+  getKeyVisualPath,
+  getProjectPath,
   setLastPdfPath,
   setLastDurationMs,
   setTimerMode,
@@ -26,6 +31,7 @@ import {
   setProjectPath,
   setPlaylistCompact,
   setAutoAdvance,
+  setAudienceWindowed,
 } from './display-mapping.js'
 import { cachedPdfPathFor, convertPptxToPdf, findSoffice } from './pptx-converter.js'
 import {
@@ -307,9 +313,11 @@ export function registerIpcHandlers(): void {
     }))
   })
 
-  ipcMain.handle('layout:set', (_e, payload: { layout: Layout; displayMap: DisplayMap }) => {
-    applyLayout(payload.layout, payload.displayMap)
+  ipcMain.handle('layout:set', (_e, payload: { layout: Layout; displayMap: DisplayMap; audienceWindowed?: boolean }) => {
+    const windowed = Boolean(payload.audienceWindowed)
+    applyLayout(payload.layout, payload.displayMap, windowed)
     saveMapping(payload.layout, payload.displayMap)
+    setAudienceWindowed(windowed)
   })
 
   ipcMain.handle('playlist:add', async (): Promise<PlaylistEntry[]> => {
@@ -458,7 +466,40 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle('sidecar:path', (_e, pdfPath: string) => sidecarPathFor(pdfPath))
 
+  // ── Session restore ────────────────────────────────────────────────────────
+
+  /** Returns true if there is a previous session worth restoring. */
+  ipcMain.handle('session:has-last', () => {
+    return Boolean(getLastPdfPath()) || getPlaylist().length > 0
+  })
+
+  /** Restores the last session: playlist, key visual, project path, and last open file. */
+  ipcMain.handle('session:restore', async (): Promise<OpenPdfResult & { hadSession: boolean }> => {
+    const lastPath = getLastPdfPath()
+    const savedPlaylist = getPlaylist()
+    const savedPlaylistId = getCurrentPlaylistId()
+    const savedKeyVisual = getKeyVisualPath()
+    const savedProjectPath = getProjectPath()
+
+    store.patch({
+      playlist: savedPlaylist,
+      currentPlaylistId: savedPlaylistId,
+      keyVisualPath: savedKeyVisual,
+      projectPath: savedProjectPath,
+    })
+
+    if (!lastPath) {
+      return { ok: true, hadSession: savedPlaylist.length > 0 }
+    }
+
+    const result = await openFile(lastPath, { playlistId: savedPlaylistId })
+    return { ...result, hadSession: true }
+  })
+
   ipcMain.handle('project:new', () => {
+    // Intentionally do NOT clear persistent storage (lastPdfPath, playlist,
+    // keyVisualPath, projectPath) — this keeps session:has-last returning true
+    // so the user can restore the previous session via "Последний" after reset.
     store.patch({
       playlist: [],
       currentPlaylistId: null,
@@ -472,11 +513,6 @@ export function registerIpcHandlers(): void {
       notes: {},
       blackout: false,
     })
-    persistPlaylist()
-    setCurrentPlaylistId(null)
-    setKeyVisualPath(null)
-    setProjectPath(null)
-    setLastPdfPath(null)
   })
 
   ipcMain.handle(

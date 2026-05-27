@@ -442,6 +442,12 @@ async function projectNew(): Promise<void> {
   }
   await window.api.project.create()
   showBanner('Новый проект', 2000)
+  // Re-enable "Последний" so the user can go back to the previous session
+  if (role === 'operator') {
+    window.api.session.hasLast().then((has) => {
+      $<HTMLButtonElement>('btn-last').disabled = !has
+    }).catch(() => undefined)
+  }
 }
 
 async function projectOpen(): Promise<void> {
@@ -532,6 +538,19 @@ function setupKeyboard(): void {
         if (e.shiftKey) window.api.timer.reset()
         else toggleTimer()
         break
+      case 'Digit1':
+      case 'Digit3':
+      case 'Digit5': {
+        const min = e.code === 'Digit1' ? 1 : e.code === 'Digit3' ? 3 : 5
+        if (e.shiftKey) {
+          e.preventDefault()
+          window.api.timer.adjust(min * 60_000)
+        } else if (e.ctrlKey) {
+          e.preventDefault()
+          window.api.timer.adjust(-min * 60_000)
+        }
+        break
+      }
       case 'Slash':
         if (e.shiftKey) { // Shift+/ = ?
           e.preventDefault()
@@ -692,6 +711,18 @@ function setupOperatorControls(): void {
     noteDebounce = window.setTimeout(() => window.api.note.update(slide, text), 300)
   })
 
+  // Session buttons (top-left)
+  $<HTMLButtonElement>('btn-new').addEventListener('click', () => projectNew())
+  $<HTMLButtonElement>('btn-open').addEventListener('click', () => projectOpen())
+  $<HTMLButtonElement>('btn-save').addEventListener('click', () => projectSave(false))
+  $<HTMLButtonElement>('btn-last').addEventListener('click', async () => {
+    const btn = $<HTMLButtonElement>('btn-last')
+    btn.disabled = true
+    const res = await window.api.session.restore()
+    if (!res.ok && res.error) showBanner(`Ошибка: ${res.error}`, 6000)
+    else if (res.sha1Mismatch) showBanner('Заметки относятся к другому PDF — возможно файл изменился.', 5000)
+  })
+
   window.api.menu.onOpenPdf(openPdf)
   window.api.menu.onOpenDisplaySetup(openSetup)
   window.api.menu.onTopologyChanged(() => {
@@ -708,11 +739,18 @@ async function openSetup(): Promise<void> {
 function buildSetupModal(displays: DisplayInfo[]): void {
   const state = getState()
   const layoutInputs = setupModal.querySelectorAll<HTMLInputElement>('input[name="layout"]')
+  const windowedToggle = $<HTMLInputElement>('audience-windowed-toggle')
+  windowedToggle.checked = state.audienceWindowed
+
   layoutInputs.forEach((input) => {
     input.checked = input.value === state.layout
-    input.onchange = () => renderRoleMapping(input.value as Layout, displays, state.displayMap)
+    input.onchange = () => {
+      renderRoleMapping(input.value as Layout, displays, state.displayMap)
+      updateWindowedSection(input.value as Layout)
+    }
   })
   renderRoleMapping(state.layout, displays, state.displayMap)
+  updateWindowedSection(state.layout)
 
   $<HTMLButtonElement>('setup-cancel').onclick = () => setupModal.classList.add('hidden')
   $<HTMLButtonElement>('setup-apply').onclick = async () => {
@@ -723,8 +761,14 @@ function buildSetupModal(displays: DisplayInfo[]): void {
       mapping[r] = Number(sel.value)
     })
     setupModal.classList.add('hidden')
-    await window.api.layout.set(selectedLayout, mapping)
+    await window.api.layout.set(selectedLayout, mapping, windowedToggle.checked)
   }
+}
+
+function updateWindowedSection(layout: Layout): void {
+  const section = document.getElementById('audience-windowed-section')
+  if (!section) return
+  section.classList.toggle('hidden', layout === 'solo')
 }
 
 function renderRoleMapping(layout: Layout, displays: DisplayInfo[], current: DisplayMap): void {
@@ -772,6 +816,12 @@ async function bootstrap(): Promise<void> {
   if (role === 'operator') {
     checkSoffice().then((has) => {
       if (!has) updateLibreOfficeNotice(getState())
+    }).catch(() => undefined)
+
+    // Enable "Последний" if there is a saved session
+    window.api.session.hasLast().then((has) => {
+      const btn = $<HTMLButtonElement>('btn-last')
+      btn.disabled = !has
     }).catch(() => undefined)
   }
 

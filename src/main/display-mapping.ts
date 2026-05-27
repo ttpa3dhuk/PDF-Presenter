@@ -22,6 +22,7 @@ interface PersistedShape {
   autoAdvance: boolean
   keyVisualPath: string | null
   projectPath: string | null
+  audienceWindowed: boolean
 }
 
 const STORE_DEFAULTS: PersistedShape = {
@@ -38,6 +39,7 @@ const STORE_DEFAULTS: PersistedShape = {
   autoAdvance: false,
   keyVisualPath: null,
   projectPath: null,
+  audienceWindowed: false,
 }
 
 let _store: Store<PersistedShape> | null = null
@@ -175,4 +177,12 @@ export function getAutoAdvance(): boolean {
 
 export function setAutoAdvance(value: boolean): void {
   store().set('autoAdvance', value)
+}
+
+export function getAudienceWindowed(): boolean {
+  return Boolean(store().get('audienceWindowed'))
+}
+
+export function setAudienceWindowed(value: boolean): void {
+  store().set('audienceWindowed', value)
 }

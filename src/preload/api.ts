@@ -45,6 +45,7 @@ export interface AppState {
   autoAdvance: boolean
   keyVisualPath: string | null
   projectPath: string | null
+  audienceWindowed: boolean
 }
 
 export interface DisplayInfo {
@@ -105,7 +106,7 @@ export interface PresenterApi {
     list(): Promise<DisplayInfo[]>
   }
   layout: {
-    set(layout: Layout, displayMap: DisplayMap): Promise<void>
+    set(layout: Layout, displayMap: DisplayMap, audienceWindowed?: boolean): Promise<void>
   }
   playlist: {
     add(): Promise<PlaylistEntry[]>
@@ -138,6 +139,10 @@ export interface PresenterApi {
   }
   update: {
     onAvailable(cb: (info: { newerVersion: string; url: string }) => void): Unsubscribe
+  }
+  session: {
+    hasLast(): Promise<boolean>
+    restore(): Promise<OpenPdfResult & { hadSession: boolean }>
   }
   soffice: {
     check(): Promise<boolean>

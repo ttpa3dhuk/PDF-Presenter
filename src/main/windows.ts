@@ -38,6 +38,18 @@ function displayBounds(displayId: number | undefined): Electron.Rectangle {
   return d.bounds
 }
 
+function windowedAudienceBounds(displayId: number | undefined): Electron.Rectangle {
+  const b = displayBounds(displayId)
+  const w = Math.min(1280, Math.floor(b.width * 0.75))
+  const h = Math.round(w * 9 / 16)
+  return {
+    x: b.x + Math.floor((b.width - w) / 2),
+    y: b.y + Math.floor((b.height - h) / 2),
+    width: w,
+    height: h,
+  }
+}
+
 function tilePosition(role: Role): Electron.Rectangle {
   const primary = screen.getPrimaryDisplay().workArea
   const w = Math.floor(primary.width / 2)
@@ -50,8 +62,12 @@ function tilePosition(role: Role): Electron.Rectangle {
   return positions[role]
 }
 
-function createWindow(role: Role, displayId: number | undefined, fullscreen: boolean): BrowserWindow {
-  const bounds = DEV_TILE ? tilePosition(role) : displayBounds(displayId)
+function createWindow(role: Role, displayId: number | undefined, fullscreen: boolean, windowed = false): BrowserWindow {
+  const bounds = DEV_TILE
+    ? tilePosition(role)
+    : windowed
+      ? windowedAudienceBounds(displayId)
+      : displayBounds(displayId)
 
   const win = new BrowserWindow({
     x: bounds.x,
@@ -59,7 +75,7 @@ function createWindow(role: Role, displayId: number | undefined, fullscreen: boo
     width: bounds.width,
     height: bounds.height,
     show: false,
-    fullscreen: fullscreen && !DEV_TILE,
+    fullscreen: fullscreen && !DEV_TILE && !windowed,
     backgroundColor: role === 'audience' ? '#000000' : '#1a1a1a',
     title: `CueDeck — ${role}`,
     webPreferences: {
@@ -73,7 +89,7 @@ function createWindow(role: Role, displayId: number | undefined, fullscreen: boo
   loadRenderer(win, rendererForRole(role))
 
   win.once('ready-to-show', () => {
-    if (!DEV_TILE && fullscreen) {
+    if (!DEV_TILE && fullscreen && !windowed) {
       win.setBounds(bounds)
       win.setFullScreen(true)
     }
@@ -87,7 +103,7 @@ function createWindow(role: Role, displayId: number | undefined, fullscreen: boo
 
 let activeWindows = new Map<Role, BrowserWindow>()
 
-export function applyLayout(layout: Layout, displayMap: DisplayMap): Map<Role, BrowserWindow> {
+export function applyLayout(layout: Layout, displayMap: DisplayMap, audienceWindowed = false): Map<Role, BrowserWindow> {
   const desiredRoles = new Set<Role>(rolesForLayout(layout))
 
   // Close windows whose role is no longer active
@@ -101,22 +117,27 @@ export function applyLayout(layout: Layout, displayMap: DisplayMap): Map<Role, B
 
   // Open missing windows and reposition existing ones
   for (const role of desiredRoles) {
-    const fullscreen = role === 'audience' || role === 'speaker'
+    const windowed = role === 'audience' && audienceWindowed
+    const fullscreen = (role === 'audience' || role === 'speaker') && !windowed
     const existing = activeWindows.get(role)
     if (existing && !existing.isDestroyed()) {
       if (!DEV_TILE) {
-        const bounds = displayBounds(displayMap[role])
         existing.setFullScreen(false)
-        existing.setBounds(bounds)
-        if (fullscreen) existing.setFullScreen(true)
+        if (windowed) {
+          existing.setBounds(windowedAudienceBounds(displayMap[role]))
+        } else {
+          const bounds = displayBounds(displayMap[role])
+          existing.setBounds(bounds)
+          if (fullscreen) existing.setFullScreen(true)
+        }
       }
     } else {
-      const win = createWindow(role, displayMap[role], fullscreen)
+      const win = createWindow(role, displayMap[role], fullscreen, windowed)
       activeWindows.set(role, win)
     }
   }
 
-  store.patch({ layout, displayMap })
+  store.patch({ layout, displayMap, audienceWindowed })
   return activeWindows
 }
 

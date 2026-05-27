@@ -6,22 +6,16 @@ import { registerIpcHandlers, flushPendingWrites, kindOf } from './ipc.js'
 import {
   getSavedMapping,
   saveMapping,
-  getLastPdfPath,
   getLastDurationMs,
   getTimerMode,
   getTimerPosition,
   getTimerScale,
   getNotesFontSize,
-  getPlaylist,
-  getCurrentPlaylistId,
-  getKeyVisualPath,
-  getProjectPath,
   getPlaylistCompact,
   getAutoAdvance,
+  getAudienceWindowed,
 } from './display-mapping.js'
 import { store } from './state.js'
-import { computePdfSha1, loadNotes, sha1FromBuffer } from './notes-store.js'
-import { readFile } from 'node:fs/promises'
 
 function buildMenu(): void {
   const isMac = process.platform === 'darwin'
@@ -107,55 +101,22 @@ function sendToOperator(channel: string, ...args: unknown[]): void {
   if (op && !op.isDestroyed()) op.webContents.send(channel, ...args)
 }
 
-async function restoreLastPdf(): Promise<void> {
-  const lastPath = getLastPdfPath()
-  if (!lastPath) return
-  const kind = kindOf(lastPath)
-  if (!kind) return
-  try {
-    let sha1: string
-    let totalSlides = 1
-
-    if (kind === 'pdf') {
-      // Single read: compute SHA1 and count pages from the same buffer.
-      const buf = await readFile(lastPath)
-      sha1 = sha1FromBuffer(buf)
-      const text = buf.toString('latin1')
-      totalSlides = (text.match(/\/Type\s*\/Page(?!s)/g) ?? []).length
-    } else {
-      // Images and PPTX: only need SHA1; page count is 1 or comes from renderer.
-      sha1 = await computePdfSha1(lastPath)
-    }
-
-    const loaded = await loadNotes(lastPath, sha1)
-    store.patch({
-      pdfPath: lastPath,
-      pdfSha1: sha1,
-      fileKind: kind,
-      totalSlides,
-      notes: loaded.notes,
-      currentSlide: 1,
-      blackout: false,
-    })
-  } catch {
-    // file gone or unreadable — ignore
-  }
-}
 
 function bootLayout(): void {
   const displays = screen.getAllDisplays()
   const primaryId = screen.getPrimaryDisplay().id
   const displayInfo = displays.map((d) => ({ id: d.id, internal: d.id === primaryId }))
+  const audienceWindowed = getAudienceWindowed()
 
   const saved = getSavedMapping()
   if (saved) {
-    applyLayout(saved.layout, saved.displayMap)
+    applyLayout(saved.layout, saved.displayMap, audienceWindowed)
     return
   }
 
   const layout = defaultLayoutForDisplayCount(displays.length)
   const displayMap = autoAssignDisplays(layout, displayInfo)
-  applyLayout(layout, displayMap)
+  applyLayout(layout, displayMap, audienceWindowed)
   saveMapping(layout, displayMap)
 }
 
@@ -181,23 +142,19 @@ app.whenReady().then(async () => {
     }
   })
 
-  // Restore saved timer settings + playlist before any window opens
+  // Restore preferences (timer settings, UI prefs) — session content loaded on demand via "Последний"
   store.patch({
     timer: { ...store.get().timer, durationMs: getLastDurationMs() },
     timerMode: getTimerMode(),
     timerPosition: getTimerPosition(),
     timerScale: getTimerScale(),
     notesFontSize: getNotesFontSize(),
-    playlist: getPlaylist(),
-    currentPlaylistId: getCurrentPlaylistId(),
     playlistCompact: getPlaylistCompact(),
     autoAdvance: getAutoAdvance(),
-    keyVisualPath: getKeyVisualPath(),
-    projectPath: getProjectPath(),
+    audienceWindowed: getAudienceWindowed(),
   })
 
   bootLayout()
-  await restoreLastPdf()
   registerShortcuts()
   watchDisplayChanges()
 

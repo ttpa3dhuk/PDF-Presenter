@@ -47,7 +47,7 @@ const api: PresenterApi = {
     list: () => ipcRenderer.invoke('displays:list'),
   },
   layout: {
-    set: (layout, displayMap) => ipcRenderer.invoke('layout:set', { layout, displayMap }),
+    set: (layout, displayMap, audienceWindowed) => ipcRenderer.invoke('layout:set', { layout, displayMap, audienceWindowed: Boolean(audienceWindowed) }),
   },
   playlist: {
     add: () => ipcRenderer.invoke('playlist:add'),
@@ -117,6 +117,10 @@ const api: PresenterApi = {
       ipcRenderer.on('update:available', listener)
       return () => ipcRenderer.removeListener('update:available', listener)
     },
+  },
+  session: {
+    hasLast: () => ipcRenderer.invoke('session:has-last'),
+    restore: () => ipcRenderer.invoke('session:restore'),
   },
   soffice: {
     check: () => ipcRenderer.invoke('soffice:check'),
